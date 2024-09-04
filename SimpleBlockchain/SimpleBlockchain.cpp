@@ -2,10 +2,15 @@
 //
 
 #include <iostream>
+#include "Transaction.h"
 
 int main()
 {
-    std::cout << "Hello World!\n";
+    Transaction t("0x12323","0x23232");
+    std::cout<<t.getTime()<<'\n';
+	std::cout << t.getSender(); 
+
+    
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

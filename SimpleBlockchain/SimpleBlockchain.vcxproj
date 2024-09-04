@@ -129,6 +129,13 @@
   <ItemGroup>
     <ClCompile Include="SimpleBlockchain.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Address.h" />
+    <ClInclude Include="Transaction.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SimpleBlockchain.rc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
