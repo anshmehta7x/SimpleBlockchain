@@ -3,14 +3,13 @@
 
 #include <iostream>
 #include "Transaction.h"
+#include "Hash.h"
 
 int main()
 {
-    Transaction t("0x12323","0x23232");
-    std::cout<<t.getTime()<<'\n';
-	std::cout << t.getSender(); 
-
-    
+    Transaction t("0x12323","0x23232",23.23);
+    t.setTxHash();
+    std::cout << t.getTxHash();
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

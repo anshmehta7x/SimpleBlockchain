@@ -1,8 +1,10 @@
 #pragma once
+
+#include <array>
+#include <string>
 #include <ctime>
 #include "Address.h"
-#include <openssl/sha.h>
-
+#include "Hash.h"
 
 class Transaction
 {	
@@ -21,7 +23,6 @@ public:
 		this->sender = Address();
 		this->receiver = Address();
 		this->amount = 0.0;
-
 	}
 
 	Transaction(std::string sender, std::string receiver, double amt) {
@@ -35,27 +36,39 @@ public:
 
 	}
 
-	time_t getTime() {
+	time_t getTime() const {
 		return timestamp;
 	}
 		
-	std::string getSender() {
+	 std::string getSender() const {
 		return this->sender.address;
 
 	}
 
-	std::string getReceiver() {
+	std::string getReceiver() const {
 		return this->receiver.address;
 	}
 
-	double getAmount() {
+	double getAmount() const{
 		return this->amount;
 	}
 
 	void setTxHash() {
+		//combine sender, receiver, timestamp, and amount to create a hash
+		std::array <std::string, 4> dataToHash = {
+			sender.address,
+			receiver.address,
+			std::to_string(timestamp),
+			std::to_string(amount)
+		};
 
+		std::string hashResult = sha256(dataToHash);
+		this->txHash = hashResult;
 	}
 
+	std::string getTxHash() const {
+		return this->txHash;
+	}
 
 };
 
