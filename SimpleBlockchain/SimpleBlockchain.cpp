@@ -4,12 +4,23 @@
 #include <iostream>
 #include "Transaction.h"
 #include "Hash.h"
+#include "Mine.h"
+#include <string>
+#include <vector>
 
 int main()
 {
-    Transaction t("0x12323","0x23232",23.23);
-    t.setTxHash();
-    std::cout << t.getTxHash();
+	std::string x = "044000abceded";
+	Transaction t("Alice", "Bob", 10.0);
+	t.setTxHash();
+	Transaction t2("Bob", "Alice", 5.0);
+	t2.setTxHash();
+	std::vector<Transaction> txs = { t, t2 };
+	std::string prevHash = "000000";
+	std::pair<std::string, int> result = mineBlock(prevHash, txs, 3,true);
+	std::cout << result.first << std::endl;
+	std::cout << result.second << std::endl;
+
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

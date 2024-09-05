@@ -62,7 +62,7 @@ public:
 			std::to_string(amount)
 		};
 
-		std::string hashResult = sha256(dataToHash);
+		std::string hashResult = sha256_transaction(dataToHash);
 		this->txHash = hashResult;
 	}
 

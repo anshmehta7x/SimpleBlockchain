@@ -2,7 +2,6 @@
 #include <string>
 #include <regex>
 
-
 class Address {
 public:
 	std::string address;
