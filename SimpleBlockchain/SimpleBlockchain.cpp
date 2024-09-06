@@ -5,6 +5,7 @@
 #include "Transaction.h"
 #include "Hash.h"
 #include "Mine.h"
+#include "Block.h"
 #include <string>
 #include <vector>
 
@@ -17,9 +18,10 @@ int main()
 	t2.setTxHash();
 	std::vector<Transaction> txs = { t, t2 };
 	std::string prevHash = "000000";
-	std::pair<std::string, int> result = mineBlock(prevHash, txs, 3,true);
-	std::cout << result.first << std::endl;
-	std::cout << result.second << std::endl;
+	Block b(1, prevHash, txs, 3);
+	b.displayBlock();
+	b.mineBlock();
+	b.displayBlock();
 
 }
 

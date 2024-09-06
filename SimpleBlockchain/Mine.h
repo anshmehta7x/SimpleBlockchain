@@ -18,17 +18,17 @@ bool checkIfValidHash(std::string& hash, unsigned int difficulty) {
 	return startsWith(hash, target);
 }
 
-std::pair<std::string,int> mineBlock(const std::string& prevHash, const std::vector<Transaction>& transactions, unsigned int difficulty, bool verbose = false) {
+std::pair<std::string,int> proofOfWork(const std::string& prevHash, const std::vector<Transaction>& transactions, unsigned int difficulty, bool verbose = false) {
 	int nonce = 0;
 	std::string hash;
 
 	do {
 		 hash = sha256_block(prevHash + std::to_string(++nonce) + transactions[0].getTxHash());
 		 if (verbose) {
-			 std::cout << "current hash: " << hash <<" , current nonce:"<< nonce<< std::endl;
+			 std::cout << "\rCurrent hash: " << hash << " , Current nonce: " << nonce << std::flush;
 		 }
 	} while (!checkIfValidHash(hash, difficulty));
-
+	std::cout << '\n';
 	std::pair<std::string, int> result = { hash, nonce };
 	return result;
 }

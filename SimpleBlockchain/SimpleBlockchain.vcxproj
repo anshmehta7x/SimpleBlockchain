@@ -137,7 +137,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Address.h" />
-    <ClInclude Include="Block..h" />
+    <ClInclude Include="Block.h" />
     <ClInclude Include="Hash.h" />
     <ClInclude Include="Mine.h" />
     <ClInclude Include="Transaction.h" />

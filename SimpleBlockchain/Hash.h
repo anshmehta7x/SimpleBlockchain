@@ -37,3 +37,4 @@ std::string sha256_block(const std::string& data) {
 bool verifyHash(const std::string& data, const std::string& hash) {
 	return sha256_block(data) == hash;
 }
+
