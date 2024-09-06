@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <iostream>
@@ -32,15 +32,15 @@ public:
 		this->timestamp = time(0); 
 	}
 
-	void calculateMerkleRoot() {
-		if (transactions.empty()) {
+	std::string calculateMerkleRoot(std::vector<Transaction>& txs) {
+		if (txs.empty()) {
 			merkleRoot = "";
-			return;
+			return "";
 		}
 
 		std::vector<std::string> merkleTree;
 
-		for (const Transaction& t : transactions) {
+		for (const Transaction& t : txs) {
 			merkleTree.push_back(t.getTxHash());
 		}
 
@@ -59,27 +59,32 @@ public:
 			merkleTree = newLevel;
 		}
 
-		this->merkleRoot = merkleTree[0];
+		return merkleTree[0];
+	}
+
+	bool verifyMerkleRoot(std::vector<Transaction>& txs) {
+		std::string testMerkleRoot = calculateMerkleRoot(txs);
+		return testMerkleRoot == this->merkleRoot;
 	}
 
 
 	void mineBlock() {
 		// mine the block to calculate hash with target difficulty and receive nonce
 
-		// also calculate merkle root
+		// also calculate merkle root (HO GAYA SYSTUM 🔥🔥🔥🔥🔥)
 		
 		if (minedStatus) {
 			return;
 		}
-		this->calculateMerkleRoot();
-		std::pair<std::string, int> result = proofOfWork(prevHash, transactions, this->difficulty, true);
+		this->merkleRoot = calculateMerkleRoot(this->transactions);
+		std::pair<std::string, int> result = proofOfWork(prevHash, this->merkleRoot, this->difficulty, true);
 		this->blockHash = result.first;
 		this->nonce = result.second;
 		minedStatus = true;
 	}
 
 	bool verifyBlock() {
-		std::string data = prevHash + std::to_string(nonce) + transactions[0].getTxHash();
+		std::string data = prevHash + std::to_string(nonce) + this->merkleRoot;
 		return verifyHash(data, blockHash);
 	}
 

@@ -18,12 +18,12 @@ bool checkIfValidHash(std::string& hash, unsigned int difficulty) {
 	return startsWith(hash, target);
 }
 
-std::pair<std::string,int> proofOfWork(const std::string& prevHash, const std::vector<Transaction>& transactions, unsigned int difficulty, bool verbose = false) {
+std::pair<std::string,int> proofOfWork(const std::string& prevHash, const std::string merkleRoot, unsigned int difficulty, bool verbose = false) {
 	int nonce = 0;
 	std::string hash;
 
 	do {
-		 hash = sha256_block(prevHash + std::to_string(++nonce) + transactions[0].getTxHash());
+		 hash = sha256_block(prevHash + std::to_string(++nonce) + merkleRoot);
 		 if (verbose) {
 			 std::cout << "\rCurrent hash: " << hash << " , Current nonce: " << nonce << std::flush;
 		 }
