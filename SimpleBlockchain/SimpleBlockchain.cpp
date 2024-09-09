@@ -5,6 +5,7 @@
 #include "Hash.h"
 #include "Mine.h"
 #include "Block.h"
+#include "Utilities.h"
 #include <fstream>
 #include <iostream>
 
@@ -23,22 +24,24 @@ void writeTxsToFile(vector<Transaction> &txs) {
 }
 
 vector<Transaction> readTxsFromFile() {
+    vector<Transaction> txs; 
     ifstream input("transactions.txt");
-    //complete this 
+    if (input.is_open()) {
+        string line = "";
+        while (getline(input, line)) {
+            cout << line << endl;
+			vector<string> tokens = helpers::lineSplit(line, ',');
+			Transaction temp(tokens[1], tokens[2], stod(tokens[3]), stoi(tokens[0]));
+            temp.setTxHash();
+			txs.push_back(temp);
+        }
+    }
+    return txs;
 }
 
 int main()
 {
-    Transaction t1("Alice", "Bob", 10.0);
-    t1.setTxHash();
-    Transaction t2("Bob", "Charlie", 5.0);
-    t2.setTxHash();
-    Transaction t3("Charlie", "Alice", 3.0);
-    t3.setTxHash();
-
-    vector<Transaction> txs = { t1, t2, t3 };
-    writeTxsToFile(txs);
-
+    vector<Transaction> txs = readTxsFromFile();
     string prevHash = "000000";
     unsigned int difficulty = 3;
 

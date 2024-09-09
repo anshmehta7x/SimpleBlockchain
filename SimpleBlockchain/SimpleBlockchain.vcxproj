@@ -134,6 +134,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="SimpleBlockchain.cpp" />
+    <ClCompile Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Address.h" />
