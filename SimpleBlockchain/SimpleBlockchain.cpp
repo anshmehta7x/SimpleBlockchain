@@ -1,10 +1,31 @@
 #include <iostream>
+#include <string>
+#include <vector>
 #include "Transaction.h"
 #include "Hash.h"
 #include "Mine.h"
 #include "Block.h"
-#include <string>
-#include <vector>
+#include <fstream>
+#include <iostream>
+
+
+using namespace std;
+
+void writeTxsToFile(vector<Transaction> &txs) {
+	ofstream output("transactions.txt");
+    if (output.is_open()) {
+        for (Transaction t : txs) {
+			string line = to_string(t.getTime()) + "," + t.getSender() + "," + t.getReceiver() + "," + to_string(t.getAmount()) + "," + t.getTxHash();
+            output << line << '\n';
+        }
+    }
+    output.close();
+}
+
+vector<Transaction> readTxsFromFile() {
+    ifstream input("transactions.txt");
+    //complete this 
+}
 
 int main()
 {
@@ -15,9 +36,10 @@ int main()
     Transaction t3("Charlie", "Alice", 3.0);
     t3.setTxHash();
 
-    std::vector<Transaction> txs = { t1, t2, t3 };
+    vector<Transaction> txs = { t1, t2, t3 };
+    writeTxsToFile(txs);
 
-    std::string prevHash = "000000";
+    string prevHash = "000000";
     unsigned int difficulty = 3;
 
     Block block(1, prevHash, txs, difficulty);
@@ -27,19 +49,19 @@ int main()
     block.displayBlock();
 
     bool isMerkleRootValid = block.verifyMerkleRoot(txs);
-    std::cout << "Merkle Root Verification: " << (isMerkleRootValid ? "Valid" : "Invalid") << "\n";
+    cout << "Merkle Root Verification: " << (isMerkleRootValid ? "Valid" : "Invalid") << "\n";
 
     bool isBlockValid = block.verifyBlock();
-    std::cout << "Block Verification: " << (isBlockValid ? "Valid" : "Invalid") << "\n";
+    cout << "Block Verification: " << (isBlockValid ? "Valid" : "Invalid") << "\n";
 
     txs[0] = Transaction("Eve", "Mallory", 50.0);
     txs[0].setTxHash();
 
     bool isBlockValidAfterTampering = block.verifyMerkleRoot(txs);
-    std::cout << "Merkle Root Verification After Tampering: " << (isBlockValidAfterTampering ? "Valid" : "Invalid") << "\n";
+    cout << "Merkle Root Verification After Tampering: " << (isBlockValidAfterTampering ? "Valid" : "Invalid") << "\n";
 
-    std::cout << "Block Hash: " << block.getHash() << "\n";
-    std::cout << "Nonce: " << block.getNonce() << "\n";
+    cout << "Block Hash: " << block.getHash() << "\n";
+    cout << "Nonce: " << block.getNonce() << "\n";
 
     return 0;
 }

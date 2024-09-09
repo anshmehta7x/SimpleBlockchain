@@ -32,7 +32,17 @@ public:
 		this->sender = Address(sender);
 		this->receiver = Address(receiver);
 		this->amount = amt;
+	}
 
+	//when loading from file, need to set timestamp also
+	Transaction(std::string sender, std::string receiver, double amt, time_t timestamp) {
+		if (amt <= 0) {
+			throw "Invalid amount";
+		}
+		this->timestamp = timestamp;
+		this->sender = Address(sender);
+		this->receiver = Address(receiver);
+		this->amount = amt;
 	}
 
 	time_t getTime() const {
