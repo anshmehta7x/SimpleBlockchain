@@ -38,6 +38,12 @@
     <ClInclude Include="Mine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Chain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TransactionPool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="SimpleBlockchain.rc">

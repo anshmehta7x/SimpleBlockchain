@@ -25,7 +25,7 @@ public:
 	}
 
 	Transaction(std::string sender, std::string receiver, double amt) {
-		if (amt <= 0) {
+		if (amt < 0) {
 			throw "Invalid amount";
 		}
 		time(&timestamp);

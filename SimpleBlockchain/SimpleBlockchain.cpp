@@ -8,7 +8,7 @@
 #include "Utilities.h"
 #include <fstream>
 #include <iostream>
-
+#include "Chain.h"
 
 using namespace std;
 
@@ -19,6 +19,10 @@ void writeTxsToFile(vector<Transaction> &txs) {
 			string line = to_string(t.getTime()) + "," + t.getSender() + "," + t.getReceiver() + "," + to_string(t.getAmount()) + "," + t.getTxHash();
             output << line << '\n';
         }
+    }
+    else {
+        cerr << "Error: Could not open transactions.txt for writing." << endl;
+
     }
     output.close();
 }
@@ -36,35 +40,35 @@ vector<Transaction> readTxsFromFile() {
 			txs.push_back(temp);
         }
     }
+    else {
+        cerr << "Error: Could not open transactions.txt for reading." << endl;
+
+    }
     return txs;
 }
 
-int main()
-{
-    vector<Transaction> txs = readTxsFromFile();
-    string prevHash = "000000";
-    unsigned int difficulty = 3;
+int main() {
+    Chain blockchain(3);
 
-    Block block(1, prevHash, txs, difficulty);
-    block.displayBlock();
+    // Read transactions from file and add them to the pool
+    std::vector<Transaction> txs = readTxsFromFile();
+    txs.push_back(readTxsFromFile()[0]);
+	cout << txs[0].getSender() << endl;
+    for (const auto& tx : txs) {
+        blockchain.addTransaction(tx);
+        // Sleep for a short time to simulate transactions coming in over time
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
 
-    block.mineBlock();
-    block.displayBlock();
+    // Wait for a moment to allow mining to complete
+    std::this_thread::sleep_for(std::chrono::seconds(2));
 
-    bool isMerkleRootValid = block.verifyMerkleRoot(txs);
-    cout << "Merkle Root Verification: " << (isMerkleRootValid ? "Valid" : "Invalid") << "\n";
+    // Display the entire blockchain
+    blockchain.displayChain();
 
-    bool isBlockValid = block.verifyBlock();
-    cout << "Block Verification: " << (isBlockValid ? "Valid" : "Invalid") << "\n";
-
-    txs[0] = Transaction("Eve", "Mallory", 50.0);
-    txs[0].setTxHash();
-
-    bool isBlockValidAfterTampering = block.verifyMerkleRoot(txs);
-    cout << "Merkle Root Verification After Tampering: " << (isBlockValidAfterTampering ? "Valid" : "Invalid") << "\n";
-
-    cout << "Block Hash: " << block.getHash() << "\n";
-    cout << "Nonce: " << block.getNonce() << "\n";
+    // Verify the blockchain
+    bool isChainValid = blockchain.verifyChain();
+    std::cout << "Blockchain Verification: " << (isChainValid ? "Valid" : "Invalid") << "\n";
 
     return 0;
 }

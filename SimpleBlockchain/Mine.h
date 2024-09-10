@@ -13,7 +13,7 @@ bool startsWith(const std::string& str, const std::string& prefix) {
 
 
 bool checkIfValidHash(std::string& hash, unsigned int difficulty) {
-	// check  if produced hash starts with specified number of 0s (specified by difficulty value)
+	// check if produced hash starts with specified number of 0s (specified by difficulty value)
 	std::string target(difficulty, '0');
 	return startsWith(hash, target);
 }
