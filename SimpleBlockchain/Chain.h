@@ -46,7 +46,8 @@ private:
 
 
 public:
-    Chain(unsigned int diff = 3) : difficulty(diff), stopMining(false) {
+    Chain(unsigned int diff = 3, unsigned int threshold = 5) : difficulty(diff), stopMining(false) {
+        txPool.setThreshold(threshold);
         // Create genesis block
         std::vector<Transaction> genesisTransactions;
         genesisTransactions.push_back(Transaction("Genesis", "Genesis", 0));

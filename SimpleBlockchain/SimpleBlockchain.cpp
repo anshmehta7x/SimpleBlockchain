@@ -86,16 +86,15 @@ void populateTransactions(int count) {
 
 int main() {
     //populate transactions.txt
-	populateTransactions(20);
+	populateTransactions(5);
 
 
-    Chain blockchain(3);
+    Chain blockchain(3,2);
 
 
     // Read transactions from file and add them to the pool
     std::vector<Transaction> txs = readTxsFromFile();
     txs.push_back(readTxsFromFile()[0]);
-	cout << txs[0].getSender() << endl;
     for (const auto& tx : txs) {
         blockchain.addTransaction(tx);
         // Sleep for a short time to simulate transactions coming in over time
