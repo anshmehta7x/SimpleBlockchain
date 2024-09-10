@@ -8,6 +8,8 @@
 #include "Utilities.h"
 #include <fstream>
 #include <iostream>
+#include <random>
+
 #include "Chain.h"
 
 using namespace std;
@@ -47,8 +49,48 @@ vector<Transaction> readTxsFromFile() {
     return txs;
 }
 
+//for testing 
+void populateTransactions(int count) {
+    std::vector<Transaction> transactions;
+    std::vector<std::string> users = { "Alice", "Bob", "Charlie", "David", "Eve","Fein"};
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> userDist(0, users.size() - 1);
+    std::uniform_real_distribution<> amountDist(1.0, 100.0);
+
+    for (int i = 0; i < count; ++i) {
+        std::string sender = users[userDist(gen)];
+        std::string receiver;
+        do {
+            receiver = users[userDist(gen)];
+        } while (receiver == sender); // Ensure sender and receiver are different
+
+        double amount = std::round(amountDist(gen) * 100.0) / 100.0; // Round to 2 decimal places
+
+        try {
+            Transaction tx(sender, receiver, amount);
+            tx.setTxHash();
+            transactions.push_back(tx);
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Error creating transaction: " << e.what() << std::endl;
+            // Continue with the next iteration if there's an error
+        }
+    
+    }
+
+	writeTxsToFile(transactions);
+
+}
+
 int main() {
+    //populate transactions.txt
+	populateTransactions(20);
+
+
     Chain blockchain(3);
+
 
     // Read transactions from file and add them to the pool
     std::vector<Transaction> txs = readTxsFromFile();
@@ -61,7 +103,7 @@ int main() {
     }
 
     // Wait for a moment to allow mining to complete
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+    std::this_thread::sleep_for(std::chrono::seconds(5));
 
     // Display the entire blockchain
     blockchain.displayChain();
@@ -69,6 +111,13 @@ int main() {
     // Verify the blockchain
     bool isChainValid = blockchain.verifyChain();
     std::cout << "Blockchain Verification: " << (isChainValid ? "Valid" : "Invalid") << "\n";
+
+
+    blockchain.modifyBlock(1);
+    bool isChainValidAfterMod = blockchain.verifyChain();
+    std::cout << "Blockchain Verification: " << (isChainValidAfterMod ? "Valid" : "Invalid") << "\n";
+
+
 
     return 0;
 }

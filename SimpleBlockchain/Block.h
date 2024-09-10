@@ -60,7 +60,7 @@ public:
         if (minedStatus) {
             return;
         }
-        std::pair<std::string, int> result = proofOfWork(prevHash, this->merkleRoot, this->difficulty, true);
+        std::pair<std::string, int> result = proofOfWork(prevHash, this->merkleRoot, this->difficulty, false);
         this->blockHash = result.first;
         this->nonce = result.second;
         minedStatus = true;
@@ -101,5 +101,9 @@ public:
             }
             std::cout << "_________________________________________________________________________________________\n";
         }
+    }
+
+    void randomModificationForTesting() {
+        transactions[0].randomModification();
     }
 };

@@ -10,7 +10,7 @@ private:
     unsigned int transactionThreshold;
 
 public:
-    TransactionPool(unsigned int threshold = 2) : transactionThreshold(threshold) {}
+    TransactionPool(unsigned int threshold = 8) : transactionThreshold(threshold) {}
 
     void addTransaction(const Transaction& tx) {
         std::lock_guard<std::mutex> lock(poolMutex);

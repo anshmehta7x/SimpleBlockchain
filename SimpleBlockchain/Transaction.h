@@ -79,5 +79,10 @@ public:
 		return this->txHash;
 	}
 
+	//random modification for testing
+	void randomModification() {
+		this->amount = 12312321;
+	}
+
 };
 

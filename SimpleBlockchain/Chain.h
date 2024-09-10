@@ -27,12 +27,23 @@ private:
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
+            // Mine remaining transactions
+            mineRemainingTransactions();
         }
         catch (const std::exception& e) {
             std::cerr << "Error in miningLoop: " << e.what() << std::endl;
             stopMining = true;
         }
     }
+
+    void mineRemainingTransactions() {
+        std::vector<Transaction> remainingTransactions = txPool.getAndClearTransactions();
+        if (!remainingTransactions.empty()) {
+            addBlock(remainingTransactions);
+            std::cout << "Final block mined with remaining transactions. Transactions in block: " << remainingTransactions.size() << "\n";
+        }
+    }
+
 
 public:
     Chain(unsigned int diff = 3) : difficulty(diff), stopMining(false) {
@@ -97,6 +108,11 @@ public:
     }
 
     const Block& getLatestBlock() const {
-        return blockchain.back();
+        return blockchain.back  ();
+    }
+
+    //for testing verification 
+    void modifyBlock(int index) {
+        blockchain[index].randomModificationForTesting();
     }
 };
