@@ -9,7 +9,6 @@
 #include <fstream>
 #include <iostream>
 #include <random>
-
 #include "Chain.h"
 
 using namespace std;
@@ -86,11 +85,10 @@ void populateTransactions(int count) {
 
 int main() {
     //populate transactions.txt
-	populateTransactions(2);
+	populateTransactions(10);
 
     //Chain attributes: difficulty, block size
-    Chain blockchain(3,1);
-
+    Chain blockchain(3,4);
 
     // Read transactions from file and add them to the pool
     std::vector<Transaction> txs = readTxsFromFile();
@@ -111,13 +109,12 @@ int main() {
     bool isChainValid = blockchain.verifyChain();
     std::cout << "Blockchain Verification: " << (isChainValid ? "Valid" : "Invalid") << "\n";
 
+    //blockchain.modifyBlock(2);
+    //blockchain.displayChain();
+    //bool isChainValidAfterMod = blockchain.verifyChain();
+    //std::cout << "Blockchain Verification: " << (isChainValidAfterMod ? "Valid" : "Invalid") << "\n";
 
-    blockchain.modifyBlock(1);
-    blockchain.displayChain();
-    bool isChainValidAfterMod = blockchain.verifyChain();
-    std::cout << "Blockchain Verification: " << (isChainValidAfterMod ? "Valid" : "Invalid") << "\n";
-
-
+    blockchain.writeCurrentChainToFile("blockchain.txt");
 
     return 0;
 }

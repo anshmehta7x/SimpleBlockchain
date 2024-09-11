@@ -75,6 +75,8 @@ public:
     std::string getHash() const { return this->blockHash; }
     unsigned int getNonce() const { return this->nonce; }
     std::string getPrevHash() const { return this->prevHash; }
+    time_t getTime() const { return this->timestamp; }
+	std::string getMerkleRoot() const { return this->merkleRoot; }
     const std::vector<Transaction>& getTransactions() const { return this->transactions; }
 
     void displayBlock() const {
@@ -105,5 +107,6 @@ public:
 
     void randomModificationForTesting() {
         transactions[0].randomModification();
+        this->merkleRoot = calculateMerkleRoot(this->transactions);
     }
 };

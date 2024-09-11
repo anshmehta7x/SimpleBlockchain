@@ -109,11 +109,32 @@ public:
     }
 
     const Block& getLatestBlock() const {
-        return blockchain.back  ();
+        return blockchain.back();
     }
 
     //for testing verification 
     void modifyBlock(int index) {
         blockchain[index].randomModificationForTesting();
+    }
+
+    //write to file
+    bool writeCurrentChainToFile(std::string filename) {
+		std::ofstream outputFile = std::ofstream(filename);
+        if (!outputFile.is_open()) {
+            std::cerr << "Error opening file for writing\n";
+            return false;
+        }
+        for (const Block& iterBlock : blockchain) {
+			outputFile << iterBlock.getHash() << " " << iterBlock.getPrevHash() << " " << iterBlock.getNonce() << " " << iterBlock.getMerkleRoot() << " " << iterBlock.getTime() << "\n";
+			for (const Transaction& iterTx : iterBlock.getTransactions()) {
+				outputFile << iterTx.getSender() << " " << iterTx.getReceiver() << " " << iterTx.getAmount() << " " << iterTx.getTime() << " " << iterTx.getTxHash() << "\n";
+			}
+		}
+		outputFile.close();
+        return true;
+    }
+
+    bool readChainFromFile(std::string filename, unsigned int blockThreshold) {
+        return true;
     }
 };
