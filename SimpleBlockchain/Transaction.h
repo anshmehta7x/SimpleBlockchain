@@ -82,6 +82,7 @@ public:
 	//random modification for testing
 	void randomModification() {
 		this->amount = 12312321;
+		this->setTxHash();
 	}
 
 };

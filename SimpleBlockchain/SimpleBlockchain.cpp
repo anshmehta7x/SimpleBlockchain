@@ -86,10 +86,10 @@ void populateTransactions(int count) {
 
 int main() {
     //populate transactions.txt
-	populateTransactions(5);
+	populateTransactions(2);
 
-
-    Chain blockchain(3,2);
+    //Chain attributes: difficulty, block size
+    Chain blockchain(3,1);
 
 
     // Read transactions from file and add them to the pool
@@ -113,6 +113,7 @@ int main() {
 
 
     blockchain.modifyBlock(1);
+    blockchain.displayChain();
     bool isChainValidAfterMod = blockchain.verifyChain();
     std::cout << "Blockchain Verification: " << (isChainValidAfterMod ? "Valid" : "Invalid") << "\n";
 

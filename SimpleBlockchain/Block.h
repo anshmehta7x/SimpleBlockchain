@@ -51,7 +51,7 @@ public:
         return merkleTree[0];
     }
 
-    bool verifyMerkleRoot(const std::vector<Transaction>& txs) const {
+    bool verifyMerkleRoot(const std::vector<Transaction> txs) const {
         std::string testMerkleRoot = calculateMerkleRoot(txs);
         return testMerkleRoot == this->merkleRoot;
     }
