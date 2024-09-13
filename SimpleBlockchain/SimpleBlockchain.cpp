@@ -10,9 +10,6 @@
 #include "Mine.h"
 #include "Block.h"
 #include "Utilities.h"
-#include <fstream>
-#include <iostream>
-#include <random>
 #include "Chain.h"
 
 using namespace std;
@@ -91,8 +88,8 @@ int main() {
     //populate transactions.txt
 	populateTransactions(10);
 
-    //Chain attributes: difficulty, block size
-    Chain blockchain(3,4);
+    //Chain attributes: difficulty, block size (threshold)
+    Chain blockchain(2,3);
 
     // Read transactions from file and add them to the pool
     std::vector<Transaction> txs = readTxsFromFile();
@@ -106,19 +103,21 @@ int main() {
     // Wait for a moment to allow mining to complete
     std::this_thread::sleep_for(std::chrono::seconds(5));
 
-    // Display the entire blockchain
-    blockchain.displayChain();
+    //// Display the entire blockchain
+    //blockchain.displayChain();
 
-    // Verify the blockchain
-    bool isChainValid = blockchain.verifyChain();
-    std::cout << "Blockchain Verification: " << (isChainValid ? "Valid" : "Invalid") << "\n";
+    //// Verify the blockchain
+    //bool isChainValid = blockchain.verifyChain();
+    //std::cout << "Blockchain Verification: " << (isChainValid ? "Valid" : "Invalid") << "\n";
 
     //blockchain.modifyBlock(2);
     //blockchain.displayChain();
     //bool isChainValidAfterMod = blockchain.verifyChain();
     //std::cout << "Blockchain Verification: " << (isChainValidAfterMod ? "Valid" : "Invalid") << "\n";
 
-    blockchain.writeCurrentChainToFile("blockchain.txt");
+    blockchain.writeCurrentChainToFile("chain.txt");
+    blockchain.readChainFromFile("chain.txt");
+	blockchain.displayChain();
 
     return 0;
 }

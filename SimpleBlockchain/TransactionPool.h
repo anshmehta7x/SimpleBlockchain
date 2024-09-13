@@ -10,32 +10,21 @@ private:
     unsigned int transactionThreshold;
 
 public:
-    TransactionPool(unsigned int threshold = 8) : transactionThreshold(threshold) {}
+    // Constructor
+    TransactionPool(unsigned int threshold = 8);
 
-	void setThreshold(unsigned int threshold) {
-		this->transactionThreshold = threshold;
-	}
+    // Set the transaction threshold
+    void setThreshold(unsigned int threshold);
 
-    void addTransaction(const Transaction& tx) {
-        std::lock_guard<std::mutex> lock(poolMutex);
-        pool.push_back(tx);
-    }
+    // Add a transaction to the pool
+    void addTransaction(const Transaction& tx);
 
-    bool isReadyToMine() const {
-        return pool.size() >= transactionThreshold;
-    }
+    // Check if the pool is ready for mining
+    bool isReadyToMine() const;
 
-    std::vector<Transaction> getAndClearTransactions() {
-        std::lock_guard<std::mutex> lock(poolMutex);
-        std::vector<Transaction> transactions;
-        if (pool.size() >= transactionThreshold) {
-            transactions.assign(pool.begin(), pool.begin() + transactionThreshold);
-            pool.erase(pool.begin(), pool.begin() + transactionThreshold);
-        }
-        return transactions;
-    }
+    // Get and clear the transactions when ready to mine
+    std::vector<Transaction> getAndClearTransactions();
 
-    size_t size() const {
-        return pool.size();
-    }
+    // Get the size of the transaction pool
+    size_t size() const;
 };

@@ -133,11 +133,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Block.cpp" />
     <ClCompile Include="Hash.cpp" />
+    <ClCompile Include="Mine.cpp" />
     <ClCompile Include="SimpleBlockchain.cpp" />
     <ClCompile Include="Transaction.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\anshk\source\repos\SimpleBlockchain\SimpleBlockchain\x64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <ClCompile Include="TransactionPool.cpp" />
     <ClCompile Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
@@ -146,7 +149,6 @@
     <ClInclude Include="Chain.h" />
     <ClInclude Include="Hash.h" />
     <ClInclude Include="Mine.h" />
-    <ClInclude Include="resource.h" />
     <ClInclude Include="Transaction.h" />
     <ClInclude Include="TransactionPool.h" />
   </ItemGroup>
