@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 /SimpleBlockchain/blockchain.txt
 /SimpleBlockchain/transactions.txt
+/SimpleBlockchain/chain.txt

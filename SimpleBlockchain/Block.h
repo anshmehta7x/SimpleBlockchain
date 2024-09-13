@@ -60,7 +60,7 @@ public:
         if (minedStatus) {
             return;
         }
-        std::pair<std::string, int> result = proofOfWork(prevHash, this->merkleRoot, this->difficulty, false);
+        std::pair<std::string, int> result = proofOfWork(prevHash, this->merkleRoot, this->difficulty, true);
         this->blockHash = result.first;
         this->nonce = result.second;
         minedStatus = true;

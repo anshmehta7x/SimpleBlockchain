@@ -1,6 +1,10 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
+#include <random>
+#include <chrono>
+#include <thread>
 #include "Transaction.h"
 #include "Hash.h"
 #include "Mine.h"
