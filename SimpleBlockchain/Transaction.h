@@ -27,4 +27,5 @@ public:
     void setTxHash();
     std::string getTxHash() const;
     void randomModification();
+
 };

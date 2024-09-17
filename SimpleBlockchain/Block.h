@@ -45,4 +45,7 @@ public:
 
     // Function for testing block modification
     void randomModificationForTesting();
+
+    void writeTxsToFile() const;
+    void readTxsFromFile();
 };

@@ -125,16 +125,56 @@ public:
             return false;
         }
         for (const Block& iterBlock : blockchain) {
-			outputFile << iterBlock.getHash() << " " << iterBlock.getPrevHash() << " " << iterBlock.getNonce() << " " << iterBlock.getMerkleRoot() << " " << iterBlock.getTime() << "\n";
+			outputFile << "BLOCK: " << iterBlock.getHash() << " " << iterBlock.getPrevHash() << " " << iterBlock.getNonce() << " " << iterBlock.getMerkleRoot() << " " << iterBlock.getTime() << "\n";
 			for (const Transaction& iterTx : iterBlock.getTransactions()) {
-				outputFile << iterTx.getSender() << " " << iterTx.getReceiver() << " " << iterTx.getAmount() << " " << iterTx.getTime() << " " << iterTx.getTxHash() << "\n";
+				outputFile <<"TX: "<< iterTx.getSender() << " " << iterTx.getReceiver() << " " << iterTx.getAmount() << " " << iterTx.getTime() << " " << iterTx.getTxHash() << "\n";
 			}
 		}
 		outputFile.close();
         return true;
     }
 
-    bool readChainFromFile(std::string filename, unsigned int blockThreshold) {
+    bool readChainFromFile(string filename) {
+        ifstream inputFile(filename);
+        if (!inputFile.is_open()) {
+            cerr << "Error opening file for reading\n";
+            return false;
+        }
+
+        blockchain.clear(); // Clear existing blockchain
+        string line;
+        vector<Transaction> currentTransactions;
+        unsigned int blockId = 0;
+
+        while (getline(inputFile, line)) {
+            vector<string> tokens = helpers::lineSplit(line, ' ');
+
+            if (tokens[0] == "BLOCK:") {
+                if (!currentTransactions.empty()) {
+                    Block block(blockId, tokens[2], currentTransactions, difficulty);
+                    block.mineBlock();
+                    blockchain.push_back(block);
+                    currentTransactions.clear();
+                    blockId++;
+                }
+            }
+            else if (tokens[0] == "TX:") {
+                time_t timestamp = stoul(tokens[4]);
+                Transaction tx(tokens[1], tokens[2], stod(tokens[3]), timestamp);
+                // Note: We don't need to call setTxHash() as it's likely called in the constructor
+                currentTransactions.push_back(tx);
+            }
+        }
+
+        // Add the last block if there are any remaining transactions
+        if (!currentTransactions.empty()) {
+            Block block(blockId, blockchain.back().getHash(), currentTransactions, difficulty);
+            block.mineBlock();
+            blockchain.push_back(block);
+        }
+
+        inputFile.close();
         return true;
     }
+
 };

@@ -1,5 +1,7 @@
 #pragma once
 #include "Block.h"
+#include <fstream>
+#include "Utilities.h"
 
 // Constructor definitions
 Block::Block() : difficulty(0), blockId(0), nonce(0), timestamp(0), minedStatus(false) {}
@@ -96,4 +98,41 @@ void Block::displayBlock() const {
 void Block::randomModificationForTesting() {
     transactions[0].randomModification();
     this->merkleRoot = calculateMerkleRoot(this->transactions);
+}
+
+// Write transactions to a file
+void Block::writeTxsToFile() const {
+
+    std::ofstream output("transactions.txt");
+    if (output.is_open()) {
+        for (Transaction t : this->transactions) {
+            std::string line = std::to_string(t.getTime()) + "," + t.getSender() + "," + t.getReceiver() + "," + std::to_string(t.getAmount()) + "," + t.getTxHash();
+            output << line << '\n';
+        }
+    }
+    else {
+        std::cerr << "Error: Could not open transactions.txt for writing." << std::endl;
+
+    }
+    output.close();
+}
+
+void Block:: readTxsFromFile() {
+    std::vector<Transaction> txs;
+    std::ifstream input("transactions.txt");
+    if (input.is_open()) {
+        std::string line = "";
+        while (std::getline(input, line)) {
+            std::cout << line << std::endl;
+            std::vector<string> tokens = helpers::lineSplit(line, ',');
+            Transaction temp(tokens[1], tokens[2], stod(tokens[3]), stoi(tokens[0]));
+            temp.setTxHash();
+            txs.push_back(temp);
+        }
+    }
+    else {
+        cerr << "Error: Could not open transactions.txt for reading." << endl;
+
+    }
+    this->transactions = txs;
 }
