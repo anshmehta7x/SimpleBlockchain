@@ -5,6 +5,7 @@
 #include <random>
 #include <chrono>
 #include <thread>
+#include <limits>
 #include "Transaction.h"
 #include "Hash.h"
 #include "Mine.h"
@@ -17,15 +18,15 @@ using namespace std;
 
 int main() {
 
-    //Chain attributes: difficulty, block size (threshold)
-    cout << "BlockChain service Started";
-
-    unsigned int difficulty;
-	unsigned int blockSize;
+  //Chain attributes: difficulty, block size (threshold)
+  cout << "BlockChain service Started";
+  unsigned int difficulty;
+  unsigned int blockSize;
 	cin >> difficulty;
 	cin >> blockSize;
 
 	Chain blockchain(difficulty, blockSize);
 
-    return 0;
+
+   return 0;
 }

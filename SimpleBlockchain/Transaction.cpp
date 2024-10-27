@@ -15,6 +15,8 @@ Transaction::Transaction(std::string sender, std::string receiver, double amt) {
     this->sender = Address(sender);
     this->receiver = Address(receiver);
     this->amount = amt;
+    this->setTxHash();
+
 }
 
 Transaction::Transaction(std::string sender, std::string receiver, double amt, time_t timestamp) {
@@ -25,6 +27,7 @@ Transaction::Transaction(std::string sender, std::string receiver, double amt, t
     this->sender = Address(sender);
     this->receiver = Address(receiver);
     this->amount = amt;
+    this->setTxHash();
 }
 
 time_t Transaction::getTime() const {
