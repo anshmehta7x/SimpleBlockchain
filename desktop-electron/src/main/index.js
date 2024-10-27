@@ -2,9 +2,92 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { spawn } from 'child_process'
+
+// Storing the C++ process globally
+let cppProcess = null
+
+function startCppProcess() {
+  const executablePath = getExecutablePath()
+
+  cppProcess = spawn(executablePath)
+
+  // Handle data from C++ process
+  cppProcess.stdout.on('data', (data) => {
+    // Send data to renderer process
+    const mainWindow = BrowserWindow.getAllWindows()[0]
+    if (mainWindow) {
+      mainWindow.webContents.send('cpp-output', data.toString())
+    }
+  })
+
+  cppProcess.stderr.on('data', (data) => {
+    const mainWindow = BrowserWindow.getAllWindows()[0]
+    if (mainWindow) {
+      mainWindow.webContents.send('cpp-error', data.toString())
+    }
+  })
+
+  cppProcess.on('close', (code) => {
+    console.log(`C++ process exited with code ${code}`)
+    cppProcess = null
+    const mainWindow = BrowserWindow.getAllWindows()[0]
+    if (mainWindow) {
+      mainWindow.webContents.send('cpp-closed', code)
+    }
+  })
+
+  cppProcess.on('error', (error) => {
+    console.error('Failed to start C++ process:', error)
+    const mainWindow = BrowserWindow.getAllWindows()[0]
+    if (mainWindow) {
+      mainWindow.webContents.send('cpp-error', error.message)
+    }
+  })
+}
+
+// Helper to get the correct executable path
+function getExecutablePath() {
+  const baseDir = is.dev
+    ? join(__dirname, '../../resources/executables')
+    : join(process.resourcesPath, 'executables')
+
+  const exeName = process.platform === 'win32' ? 'SimpleBlockchain.exe' : 'SimpleBlockchain'
+  return join(baseDir, exeName)
+}
+
+// IPC handlers for C++ process interaction
+function setupIpcHandlers() {
+  // Start the C++ process
+  ipcMain.handle('start-cpp', () => {
+    if (!cppProcess) {
+      startCppProcess()
+      return { success: true, message: 'C++ process started' }
+    }
+    return { success: false, message: 'C++ process already running' }
+  })
+
+  // Send data to C++ process
+  ipcMain.handle('send-to-cpp', (_, data) => {
+    if (cppProcess && cppProcess.stdin.writable) {
+      cppProcess.stdin.write(data + '\n')
+      return { success: true }
+    }
+    return { success: false, message: 'C++ process not running' }
+  })
+
+  // Stop the C++ process
+  ipcMain.handle('stop-cpp', () => {
+    if (cppProcess) {
+      cppProcess.kill()
+      cppProcess = null
+      return { success: true }
+    }
+    return { success: false, message: 'C++ process not running' }
+  })
+}
 
 function createWindow() {
-  // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
@@ -26,8 +109,6 @@ function createWindow() {
     return { action: 'deny' }
   })
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -35,40 +116,31 @@ function createWindow() {
   }
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
-
+  setupIpcHandlers()
   createWindow()
 
   app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
+// Cleanup C++ process on app quit
+app.on('before-quit', () => {
+  if (cppProcess) {
+    cppProcess.kill()
+    cppProcess = null
+  }
+})
+
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
 })
-
-// In this file you can include the rest of your app"s specific main process
-// code. You can also put them in separate files and require them here.

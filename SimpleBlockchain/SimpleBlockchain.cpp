@@ -15,6 +15,9 @@
 
 using namespace std;
 
+void parseInputCommands() {
+
+}
 
 int main() {
 
@@ -26,6 +29,9 @@ int main() {
 	cin >> blockSize;
 
 	Chain blockchain(difficulty, blockSize);
+	while (true) {
+		
+	}
 
 
    return 0;

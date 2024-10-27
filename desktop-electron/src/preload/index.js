@@ -1,12 +1,23 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
-// Custom APIs for renderer
-const api = {}
+const api = {
+  // Methods to control C++ process
+  startCpp: () => ipcRenderer.invoke('start-cpp'),
+  stopCpp: () => ipcRenderer.invoke('stop-cpp'),
+  sendToCpp: (data) => ipcRenderer.invoke('send-to-cpp', data),
+  
+  // Event listeners for C++ process output
+  onCppOutput: (callback) => ipcRenderer.on('cpp-output', callback),
+  onCppError: (callback) => ipcRenderer.on('cpp-error', callback),
+  onCppClosed: (callback) => ipcRenderer.on('cpp-closed', callback),
+  
+  // Event removal methods
+  offCppOutput: (callback) => ipcRenderer.removeListener('cpp-output', callback),
+  offCppError: (callback) => ipcRenderer.removeListener('cpp-error', callback),
+  offCppClosed: (callback) => ipcRenderer.removeListener('cpp-closed', callback)
+}
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
