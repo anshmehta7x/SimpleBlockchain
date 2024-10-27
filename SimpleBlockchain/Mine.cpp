@@ -20,9 +20,9 @@ std::pair<std::string, int> proofOfWork(const std::string& prevHash, const std::
 
     do {
         hash = sha256_block(prevHash + std::to_string(++nonce) + merkleRoot);
-        if (verbose) {
-            std::cout << "\rCurrent hash: " << hash << " , Current nonce: " << nonce << std::flush;
-        }
+        //if (verbose) {
+        //    std::cout << "\rCurrent hash: " << hash << " , Current nonce: " << nonce << std::flush;
+        //}
     } while (!checkIfValidHash(hash, difficulty));
     std::cout << '\n';
     std::pair<std::string, int> result = { hash, nonce };

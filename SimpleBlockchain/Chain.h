@@ -53,6 +53,8 @@ public:
         genesisTransactions.push_back(Transaction("Genesis", "Genesis", 0));
         Block genesisBlock(0, "0", genesisTransactions, difficulty);
         genesisBlock.mineBlock();
+        std::cout << "Genesis Block Created " << "\n";
+		genesisBlock.displayBlock();
         blockchain.push_back(genesisBlock);
 
         // Start mining thread
