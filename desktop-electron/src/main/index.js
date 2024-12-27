@@ -52,7 +52,7 @@ function getExecutablePath() {
     ? join(__dirname, '../../resources/executables')
     : join(process.resourcesPath, 'executables')
 
-  const exeName = process.platform === 'win32' ? 'SimpleBlockchain.exe' : 'SimpleBlockchain'
+  const exeName = 'simpleblockchain'
   return join(baseDir, exeName)
 }
 
@@ -84,6 +84,33 @@ function setupIpcHandlers() {
       return { success: true }
     }
     return { success: false, message: 'C++ process not running' }
+  })
+
+  ipcMain.handle('get-chain-status', async () => {
+    if (!cppProcess) return { success: false, message: 'Process not running' }
+    return new Promise((resolve) => {
+      cppProcess.stdin.write('status\n')
+      const timeout = setTimeout(() => {
+        resolve({ success: false, message: 'Timeout' })
+      }, 5000)
+
+      cppProcess.stdout.once('data', (data) => {
+        clearTimeout(timeout)
+        resolve({ success: true, data: JSON.parse(data.toString()) })
+      })
+    })
+  })
+
+  ipcMain.handle('start-mining', async () => {
+    if (!cppProcess) return { success: false }
+    cppProcess.stdin.write('mine\n')
+    return { success: true }
+  })
+
+  ipcMain.handle('stop-mining', async () => {
+    if (!cppProcess) return { success: false }
+    cppProcess.stdin.write('stop\n')
+    return { success: true }
   })
 }
 
