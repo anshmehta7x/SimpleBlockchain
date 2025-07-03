@@ -2,6 +2,9 @@
 #include <vector>
 #include <thread>
 #include <chrono>
+#include <fstream>
+#include <iostream>
+#include <string>
 #include "Block.h"
 #include "Transaction.h"
 #include "Hash.h"
@@ -163,12 +166,12 @@ public:
         return true;
     }
 
-    bool readChainFromFile(string filename)
+    bool readChainFromFile(std::string filename)
     {
-        ifstream inputFile(filename);
+        std::ifstream inputFile(filename);
         if (!inputFile.is_open())
         {
-            cerr << "Error opening file for reading\n";
+            std::cerr << "Error opening file for reading\n";
             return false;
         }
 
@@ -232,5 +235,14 @@ public:
     std::vector<Transaction> getPoolTransactions() const
     {
         return txPool.getAllTransactions();
+    }
+
+    const Block &getBlockAt(size_t index) const
+    {
+        if (index < blockchain.size())
+        {
+            return blockchain[index];
+        }
+        throw std::out_of_range("Block index out of range");
     }
 };
