@@ -10,10 +10,11 @@ let cppProcess = null
 function startCppProcess() {
   const executablePath = getExecutablePath()
 
-  cppProcess = spawn(executablePath)
+  cppProcess = spawn(executablePath, ['--port', '3001'])
 
   // Handle data from C++ process
   cppProcess.stdout.on('data', (data) => {
+    console.log('C++ stdout:', data.toString())
     // Send data to renderer process
     const mainWindow = BrowserWindow.getAllWindows()[0]
     if (mainWindow) {
@@ -22,6 +23,7 @@ function startCppProcess() {
   })
 
   cppProcess.stderr.on('data', (data) => {
+    console.error('C++ stderr:', data.toString())
     const mainWindow = BrowserWindow.getAllWindows()[0]
     if (mainWindow) {
       mainWindow.webContents.send('cpp-error', data.toString())
@@ -48,10 +50,13 @@ function startCppProcess() {
 
 // Helper to get the correct executable path
 function getExecutablePath() {
-  const baseDir = is.dev
-    ? join(__dirname, '../../resources/executables')
-    : join(process.resourcesPath, 'executables')
-
+  // For development, use the built executable
+  if (is.dev) {
+    return join(__dirname, '../../../SimpleBlockchain/build/simpleblockchain')
+  }
+  
+  // For production, look in resources
+  const baseDir = join(process.resourcesPath, 'executables')
   const exeName = 'simpleblockchain'
   return join(baseDir, exeName)
 }
