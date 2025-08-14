@@ -60,55 +60,108 @@ A comprehensive educational blockchain application built with C++ backend and El
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+## Quick Start 🚀
+
+### Automatic Setup (Recommended)
+```bash
+# Run the setup script to install dependencies and build everything
+./setup.sh
+
+# Then start the application
+cd desktop-electron
+npm run dev
+```
+
+### Manual Setup
+```bash
+# 1. Install system dependencies (Ubuntu/Debian)
+sudo apt update
+sudo apt install -y build-essential cmake libssl-dev curl
+
+# 2. Install Node.js dependencies
+cd desktop-electron
+npm install
+
+# 3. Build and run (the npm script will build C++ automatically)
+npm run dev
+```
+
+## Detailed Build Instructions
+
+For step-by-step manual build instructions, see [BUILD_INSTRUCTIONS.md](BUILD_INSTRUCTIONS.md)
+
 ## Prerequisites
 
 ### For C++ Backend
-- CMake 3.10 or higher
+- CMake 3.16 or higher
 - C++17 compatible compiler (GCC 7+, Clang 5+)
 - OpenSSL development libraries
-- nlohmann/json library
+- curl (for downloading nlohmann/json)
 
 ### For Electron Frontend
-- Node.js 14 or higher
+- Node.js 16 or higher
 - npm or yarn
 
-## Installation
+## Build System
 
-### 1. Install System Dependencies (Ubuntu/Debian)
+This project includes an automated build system that handles:
+- Downloading required dependencies (nlohmann/json)
+- Building the C++ backend with CMake
+- Starting the backend server from the Electron app
+- Cross-platform compatibility (Linux, macOS, Windows)
 
-```bash
-sudo apt update
-sudo apt install -y build-essential cmake libssl-dev nlohmann-json3-dev
-```
+### Build Scripts (in desktop-electron/package.json)
+- `npm run build:cpp` - Build only the C++ backend
+- `npm run build:cpp:clean` - Clean build the C++ backend  
+- `npm run dev` - Build C++ and run in development mode
+- `npm run build` - Build everything for production
 
-### 2. Build C++ Backend
+## Installation & Usage
 
+### Method 1: Automatic Setup (Recommended)
+
+1. **Run the setup script:**
+   ```bash
+   ./setup.sh
+   ```
+   This will automatically install dependencies, download required libraries, and build the C++ backend.
+
+2. **Start the application:**
+   ```bash
+   cd desktop-electron
+   npm run dev
+   ```
+
+### Method 2: Manual Build
+
+#### Step 1: Build C++ Backend
 ```bash
 cd SimpleBlockchain
+
+# Download nlohmann/json library (if not present)
+mkdir -p include/nlohmann
+curl -o include/nlohmann/json.hpp https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp
+
+# Build with CMake
 mkdir -p build
 cd build
 cmake ..
 make
 ```
 
-### 3. Install Frontend Dependencies
-
+#### Step 2: Install and Run Frontend
 ```bash
 cd desktop-electron
 npm install
+npm run dev  # This will also build the C++ backend automatically
 ```
 
-## Usage
-
-### Running the Complete Application
-
-1. **Start the Electron Application:**
-   ```bash
-   cd desktop-electron
-   npm run dev
-   ```
-   
-   The Electron app will automatically start the C++ backend server and connect to it.
+### Method 3: Using npm build scripts (Easiest)
+```bash
+cd desktop-electron
+npm install
+npm run dev  # Builds C++ backend and starts Electron app
+```
 
 ### Running Backend Separately (for API testing)
 
