@@ -1,44 +1,75 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'path'
+import { join, resolve, dirname } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { spawn } from 'child_process'
+import { existsSync } from 'fs'
 
 // Storing the C++ process globally
 let cppProcess = null
 
 function startCppProcess() {
   const executablePath = getExecutablePath()
+  console.log('🚀 Starting C++ backend at:', executablePath)
 
-  cppProcess = spawn(executablePath)
+  if (!existsSync(executablePath)) {
+    console.error('❌ C++ executable not found at:', executablePath)
+    const mainWindow = BrowserWindow.getAllWindows()[0]
+    if (mainWindow) {
+      mainWindow.webContents.send('cpp-error', `C++ executable not found at: ${executablePath}`)
+    }
+    return
+  }
+
+  const workingDir = dirname(executablePath)
+  console.log('📁 Working directory:', workingDir)
+  console.log('🔧 Spawning process:', executablePath, 'with args:', ['--port', '3001'])
+
+  cppProcess = spawn(executablePath, ['--port', '3001'], {
+    stdio: ['ignore', 'pipe', 'pipe'], // Don't pipe stdin to avoid process termination
+    detached: false,
+    cwd: workingDir, // Set working directory to the build folder
+    windowsHide: true
+  })
 
   // Handle data from C++ process
   cppProcess.stdout.on('data', (data) => {
+    const output = data.toString()
+    console.log('🟢 C++ stdout:', output)
     // Send data to renderer process
     const mainWindow = BrowserWindow.getAllWindows()[0]
     if (mainWindow) {
-      mainWindow.webContents.send('cpp-output', data.toString())
+      mainWindow.webContents.send('cpp-output', output)
     }
   })
 
   cppProcess.stderr.on('data', (data) => {
+    const error = data.toString()
+    console.error('🔴 C++ stderr:', error)
     const mainWindow = BrowserWindow.getAllWindows()[0]
     if (mainWindow) {
-      mainWindow.webContents.send('cpp-error', data.toString())
+      mainWindow.webContents.send('cpp-error', error)
     }
   })
 
-  cppProcess.on('close', (code) => {
-    console.log(`C++ process exited with code ${code}`)
+  cppProcess.on('close', (code, signal) => {
+    console.log(`🛑 C++ process exited with code ${code} and signal ${signal}`)
+    if (code !== 0 && code !== null) {
+      console.error('❌ C++ process exited with non-zero code. Try running the backend manually:', executablePath, '--port 3001')
+    }
+    if (signal) {
+      console.error('💀 C++ process was killed by signal:', signal)
+    }
     cppProcess = null
     const mainWindow = BrowserWindow.getAllWindows()[0]
     if (mainWindow) {
-      mainWindow.webContents.send('cpp-closed', code)
+      mainWindow.webContents.send('cpp-closed', { code, signal })
     }
   })
 
   cppProcess.on('error', (error) => {
-    console.error('Failed to start C++ process:', error)
+    console.error('💥 Failed to start C++ process:', error)
+    console.error('🔧 Try running the backend manually:', executablePath, '--port 3001')
     const mainWindow = BrowserWindow.getAllWindows()[0]
     if (mainWindow) {
       mainWindow.webContents.send('cpp-error', error.message)
@@ -48,12 +79,53 @@ function startCppProcess() {
 
 // Helper to get the correct executable path
 function getExecutablePath() {
-  const baseDir = is.dev
-    ? join(__dirname, '../../resources/executables')
-    : join(process.resourcesPath, 'executables')
+  // For development, use the built executable
+  if (is.dev) {
+    // Get the project root directory by going up from the Electron app directory
+    const electronDir = dirname(dirname(__dirname)) // Go up from out/main/
+    const projectRoot = dirname(electronDir) // Go up from desktop-electron/
+    const execPath = join(projectRoot, 'SimpleBlockchain', 'build', 'simpleblockchain')
+    console.log('📍 Resolved executable path:', execPath)
+    return execPath
+  }
 
+  // For production, look in resources
+  const baseDir = join(process.resourcesPath, 'executables')
   const exeName = 'simpleblockchain'
   return join(baseDir, exeName)
+}
+
+// Test backend connection
+function testBackendConnection() {
+  const http = require('http')
+
+  console.log('🔍 Testing backend connection to http://127.0.0.1:3001/api/blockchain')
+
+  const req = http.get('http://127.0.0.1:3001/api/blockchain', (res) => {
+    console.log('✅ Backend connection test successful! Status:', res.statusCode)
+    let data = ''
+    res.on('data', chunk => data += chunk)
+    res.on('end', () => {
+      console.log('📊 Backend response length:', data.length)
+      const mainWindow = BrowserWindow.getAllWindows()[0]
+      if (mainWindow) {
+        mainWindow.webContents.send('backend-ready', true)
+      }
+    })
+  })
+
+  req.on('error', (err) => {
+    console.error('❌ Backend connection test failed:', err.message)
+    const mainWindow = BrowserWindow.getAllWindows()[0]
+    if (mainWindow) {
+      mainWindow.webContents.send('backend-error', `Connection failed: ${err.message}`)
+    }
+  })
+
+  req.setTimeout(5000, () => {
+    console.error('⏰ Backend connection test timed out')
+    req.destroy()
+  })
 }
 
 // IPC handlers for C++ process interaction
@@ -85,33 +157,6 @@ function setupIpcHandlers() {
     }
     return { success: false, message: 'C++ process not running' }
   })
-
-  ipcMain.handle('get-chain-status', async () => {
-    if (!cppProcess) return { success: false, message: 'Process not running' }
-    return new Promise((resolve) => {
-      cppProcess.stdin.write('status\n')
-      const timeout = setTimeout(() => {
-        resolve({ success: false, message: 'Timeout' })
-      }, 5000)
-
-      cppProcess.stdout.once('data', (data) => {
-        clearTimeout(timeout)
-        resolve({ success: true, data: JSON.parse(data.toString()) })
-      })
-    })
-  })
-
-  ipcMain.handle('start-mining', async () => {
-    if (!cppProcess) return { success: false }
-    cppProcess.stdin.write('mine\n')
-    return { success: true }
-  })
-
-  ipcMain.handle('stop-mining', async () => {
-    if (!cppProcess) return { success: false }
-    cppProcess.stdin.write('stop\n')
-    return { success: true }
-  })
 }
 
 function createWindow() {
@@ -123,7 +168,13 @@ function createWindow() {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      nodeIntegration: false,
+      contextIsolation: true,
+      // IMPORTANT: Enable these for network requests to work
+      webSecurity: is.dev ? false : true, // Disable web security only in development
+      allowRunningInsecureContent: is.dev,
+      experimentalFeatures: true
     }
   })
 
@@ -144,6 +195,15 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  // IMPORTANT: Disable web security for development
+  if (is.dev) {
+    app.commandLine.appendSwitch('--no-sandbox')
+    app.commandLine.appendSwitch('--disable-setuid-sandbox')
+    app.commandLine.appendSwitch('--disable-web-security')
+    app.commandLine.appendSwitch('--disable-features=VizDisplayCompositor')
+    app.commandLine.appendSwitch('--allow-running-insecure-content')
+  }
+
   electronApp.setAppUserModelId('com.electron')
 
   app.on('browser-window-created', (_, window) => {
@@ -153,6 +213,18 @@ app.whenReady().then(() => {
   setupIpcHandlers()
   createWindow()
 
+  // Start the C++ backend automatically after a short delay
+  setTimeout(() => {
+    console.log('🚀 Auto-starting C++ backend...')
+    startCppProcess()
+
+    // Test connection after giving the backend time to start
+    setTimeout(() => {
+      console.log('🔍 Testing backend connection...')
+      testBackendConnection()
+    }, 5000) // Increased delay to 5 seconds
+  }, 1000)
+
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
@@ -161,6 +233,7 @@ app.whenReady().then(() => {
 // Cleanup C++ process on app quit
 app.on('before-quit', () => {
   if (cppProcess) {
+    console.log('🛑 Killing C++ process before quit')
     cppProcess.kill()
     cppProcess = null
   }

@@ -1,94 +1,173 @@
 import { useState, useEffect } from 'react';
-import SetupChain from './assets/SetupChain';
+import { blockchainAPI } from './utils/api';
+import BlockchainOverview from './components/BlockchainOverview';
+import BlockDetails from './components/BlockDetails';
+import TransactionManager from './components/TransactionManager';
+import VerificationPanel from './components/VerificationPanel';
 
 function App() {
-  const [output, setOutput] = useState([]);
-  const [isRunning, setIsRunning] = useState(false);
-  const [showSetup, setShowSetup] = useState(false); // State to show or hide SetupChain
-
-  const startProcess = async () => {
-    try {
-      await window.api.startCpp();
-      setIsRunning(true);
-    } catch (error) {
-      console.error('Failed to start C++ process:', error);
-    }
-  };
-
-  const stopProcess = async () => {
-    try {
-      await window.api.stopCpp();
-      setIsRunning(false);
-    } catch (error) {
-      console.error('Failed to stop C++ process:', error);
-    }
-  };
-
-  const sendCommand = async (command) => {
-    try {
-      await window.api.sendToCpp(command);
-    } catch (error) {
-      console.error('Failed to send command:', error);
-    }
-  };
+  const [activeTab, setActiveTab] = useState('overview');
+  const [serverStatus, setServerStatus] = useState('starting');
+  const [connectionError, setConnectionError] = useState(null);
+  const [connectionAttempt, setConnectionAttempt] = useState(0);
 
   useEffect(() => {
-    // Start process on component mount
-    startProcess();
+    // The C++ process is started automatically by the main process
+    // Just try to connect with retry logic
+    const initializeConnection = async () => {
+      try {
+        console.log('Waiting for C++ backend to start...');
 
-    // Set up listeners for C++ process
-    const outputListener = (_event, data) => {
-      if (data === 'BlockChain service Started') {
-        setShowSetup(true); // Show setup popup when blockchain service starts
+        // Try to connect with retry logic
+        const maxRetries = 15;
+        const retryDelay = 1000; // 1 second
+
+        const tryConnection = async (attempt) => {
+          try {
+            console.log(`Connection attempt ${attempt}/${maxRetries}`);
+            setConnectionAttempt(attempt);
+            const result = await blockchainAPI.getBlockchain();
+            if (result.success) {
+              console.log('✅ Successfully connected to blockchain server');
+              setServerStatus('connected');
+              return true;
+            } else {
+              console.log('❌ Connection failed:', result.message);
+              if (attempt >= maxRetries) {
+                setServerStatus('error');
+                setConnectionError(`Failed to connect after ${maxRetries} attempts: ${result.message || 'Unknown error'}`);
+                return false;
+              }
+
+              // Retry after delay
+              setTimeout(() => tryConnection(attempt + 1), retryDelay);
+              return false;
+            }
+          } catch (error) {
+            console.log(`❌ Connection error on attempt ${attempt}:`, error.message);
+            if (attempt >= maxRetries) {
+              setServerStatus('error');
+              setConnectionError(`Failed to connect after ${maxRetries} attempts: ${error.message}`);
+              return false;
+            }
+
+            // Retry after delay
+            setTimeout(() => tryConnection(attempt + 1), retryDelay);
+            return false;
+          }
+        };
+
+        // Start connection attempts after a short delay
+        setTimeout(() => tryConnection(1), 3000);
+
+      } catch (error) {
+        console.error('Connection initialization error:', error);
+        setServerStatus('error');
+        setConnectionError(`Failed to initialize connection: ${error.message}`);
       }
-      setOutput((prev) => [...prev, { type: 'output', text: data }]);
     };
 
-    const errorListener = (_event, data) => {
-      setOutput((prev) => [...prev, { type: 'error', text: data }]);
-    };
-
-    const closedListener = (_event, code) => {
-      setIsRunning(false);
-      setOutput((prev) => [...prev, { type: 'system', text: `Process exited with code ${code}` }]);
-    };
-
-    // Register listeners
-    window.api.onCppOutput(outputListener);
-    window.api.onCppError(errorListener);
-    window.api.onCppClosed(closedListener);
+    initializeConnection();
 
     // Cleanup function
     return () => {
-      stopProcess();
-      // Remove listeners if needed
-      window.api.offCppOutput && window.api.offCppOutput(outputListener);
-      window.api.offCppError && window.api.offCppError(errorListener);
-      window.api.offCppClosed && window.api.offCppClosed(closedListener);
+      if (window.api && window.api.stopCpp) {
+        window.api.stopCpp();
+      }
     };
   }, []);
 
-  return (
-    <main className="flex flex-col h-screen p-4">
-      <div className="flex-1 bg-gray-100 p-4 rounded overflow-auto">
-        {output.map((item, index) => (
-          <div
-            key={index}
-            className={`mb-1 font-mono ${
-              item.type === 'error' 
-                ? 'text-red-600' 
-                : item.type === 'system' 
-                ? 'text-blue-600' 
-                : 'text-gray-800'
-            }`}
-          >
-            {item.text}
-          </div>
-        ))}
+  const tabs = [
+    { id: 'overview', label: 'Blockchain Overview', component: BlockchainOverview },
+    { id: 'blocks', label: 'Block Details', component: BlockDetails },
+    { id: 'transactions', label: 'Transaction Manager', component: TransactionManager },
+    { id: 'verification', label: 'Verification', component: VerificationPanel }
+  ];
+
+  const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component;
+
+  if (serverStatus === 'starting') {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Starting blockchain server...</p>
+          {connectionAttempt > 0 && (
+            <p className="mt-2 text-sm text-gray-500">
+              Connection attempt {connectionAttempt}/15
+            </p>
+          )}
+        </div>
       </div>
-      
-      {showSetup && <SetupChain sendCommand={sendCommand} setShowSetup={setShowSetup} />} {/* Show SetupChain popup */}
-    </main>
+    );
+  }
+
+  if (serverStatus === 'error') {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center bg-red-50 p-8 rounded-lg max-w-lg">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold text-red-700 mb-2">Server Error</h2>
+          <p className="text-red-600 mb-4">{connectionError}</p>
+          <div className="text-sm text-gray-600 mb-4">
+            <p>Troubleshooting tips:</p>
+            <ul className="text-left list-disc list-inside mt-2">
+              <li>Make sure the C++ backend is built: <code>npm run build:cpp</code></li>
+              <li>Check if port 3001 is available</li>
+              <li>Try running the backend manually: <code>./SimpleBlockchain/build/simpleblockchain --port 3001</code></li>
+            </ul>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-100">
+      {/* Header */}
+      <header className="bg-blue-600 text-white p-4 shadow-lg">
+        <h1 className="text-2xl font-bold">Educational Blockchain Tool</h1>
+        <p className="text-blue-100">Learn and explore blockchain technology</p>
+      </header>
+
+      {/* Navigation Tabs */}
+      <nav className="bg-white shadow-sm border-b">
+        <div className="flex space-x-0">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? 'border-blue-500 text-blue-600 bg-blue-50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-hidden">
+        {ActiveComponent && <ActiveComponent />}
+      </main>
+
+      {/* Status Bar */}
+      <footer className="bg-gray-800 text-white p-2 text-sm">
+        <div className="flex justify-between items-center">
+          <span>Status: {serverStatus === 'connected' ? '🟢 Connected' : '🔴 Disconnected'}</span>
+          <span>Educational Blockchain Tool v1.0</span>
+        </div>
+      </footer>
+    </div>
   );
 }
 

@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <mutex>
 #include <condition_variable>
+#include <signal.h>
+#include <csignal>
 
 // Include your blockchain headers
 #include "Transaction.h"
@@ -29,6 +31,15 @@ using json = nlohmann::json;
 std::unique_ptr<Chain> blockchain;
 std::mutex chainMutex;
 
+// Flag for graceful shutdown
+volatile std::sig_atomic_t shutdown_flag = 0;
+
+// Signal handler for graceful shutdown
+void signal_handler(int signal) {
+    std::cout << "\nReceived signal " << signal << ". Shutting down gracefully..." << std::endl;
+    shutdown_flag = 1;
+}
+
 // Helper function to parse JSON request body
 json parseRequestBody(const httplib::Request &req)
 {
@@ -45,6 +56,13 @@ json parseRequestBody(const httplib::Request &req)
 int main(int argc, char *argv[])
 {
     std::cout << "Blockchain HTTP Server Starting...\n";
+    
+    // Set up signal handlers for graceful shutdown
+    std::signal(SIGTERM, signal_handler);
+    std::signal(SIGINT, signal_handler);
+    #ifdef SIGPIPE
+    std::signal(SIGPIPE, SIG_IGN); // Ignore broken pipe signals
+    #endif
 
     // Default values for difficulty and block size
     unsigned int difficulty = 3;
@@ -311,6 +329,50 @@ int main(int argc, char *argv[])
         
         res.set_content(response.dump(), "application/json"); });
 
+    // Get specific block by index
+    server.Get("/api/block/:index", [](const httplib::Request &req, httplib::Response &res)
+               {
+        json response;
+        
+        try {
+            size_t blockIndex = std::stoull(req.path_params.at("index"));
+            
+            std::lock_guard<std::mutex> lock(chainMutex);
+            if (blockIndex >= blockchain->getChainSize()) {
+                response["success"] = false;
+                response["message"] = "Invalid block index";
+            } else {
+                const Block& block = blockchain->getBlockAt(blockIndex);
+                
+                response["success"] = true;
+                response["block"]["id"] = blockIndex;
+                response["block"]["hash"] = block.getHash();
+                response["block"]["prevHash"] = block.getPrevHash();
+                response["block"]["merkleRoot"] = block.getMerkleRoot();
+                response["block"]["nonce"] = block.getNonce();
+                response["block"]["timestamp"] = block.getTime();
+                
+                json txArray = json::array();
+                for (const auto& tx : block.getTransactions()) {
+                    json txObj;
+                    txObj["hash"] = tx.getTxHash();
+                    txObj["sender"] = tx.getSender();
+                    txObj["receiver"] = tx.getReceiver();
+                    txObj["amount"] = tx.getAmount();
+                    txObj["timestamp"] = tx.getTime();
+                    txArray.push_back(txObj);
+                }
+                
+                response["block"]["transactions"] = txArray;
+                response["block"]["transactionCount"] = txArray.size();
+            }
+        } catch (const std::exception& e) {
+            response["success"] = false;
+            response["message"] = std::string("Error: ") + e.what();
+        }
+        
+        res.set_content(response.dump(), "application/json"); });
+
     // Save blockchain
     server.Post("/api/save", [](const httplib::Request &req, httplib::Response &res)
                 {
@@ -406,7 +468,18 @@ int main(int argc, char *argv[])
 
     // Start server
     std::cout << "HTTP server starting on port " << port << "...\n";
-    server.listen("127.0.0.1", port);
+    std::cout.flush(); // Ensure output is written immediately
+    
+    if (!server.listen("127.0.0.1", port)) {
+        std::cerr << "ERROR: Failed to start HTTP server on port " << port << std::endl;
+        std::cerr << "This could be due to:" << std::endl;
+        std::cerr << "1. Port already in use" << std::endl;
+        std::cerr << "2. Permission denied" << std::endl;
+        std::cerr << "3. Address binding issues" << std::endl;
+        return 1;
+    }
+    
+    std::cout << "HTTP server started successfully on port " << port << std::endl;
 
     return 0;
 }

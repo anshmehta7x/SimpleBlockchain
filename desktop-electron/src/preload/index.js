@@ -15,12 +15,7 @@ const api = {
   // Event removal methods
   offCppOutput: (callback) => ipcRenderer.removeListener('cpp-output', callback),
   offCppError: (callback) => ipcRenderer.removeListener('cpp-error', callback),
-  offCppClosed: (callback) => ipcRenderer.removeListener('cpp-closed', callback),
-
-  getChainStatus: () => ipcRenderer.invoke('get-chain-status'),
-  startMining: () => ipcRenderer.invoke('start-mining'),
-  stopMining: () => ipcRenderer.invoke('stop-mining'),
-  sendTransaction: (tx) => ipcRenderer.invoke('send-to-cpp', JSON.stringify(tx))
+  offCppClosed: (callback) => ipcRenderer.removeListener('cpp-closed', callback)
 }
 
 if (process.contextIsolated) {
