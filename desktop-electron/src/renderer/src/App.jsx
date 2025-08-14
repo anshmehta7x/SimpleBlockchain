@@ -11,14 +11,14 @@ function App() {
   const [connectionAttempt, setConnectionAttempt] = useState(0);
 
   useEffect(() => {
-    // Start the C++ process when the app loads
-    const initializeServer = async () => {
+    // The C++ process is started automatically by the main process
+    // Just try to connect with retry logic
+    const initializeConnection = async () => {
       try {
-        console.log('Starting C++ backend...');
-        await window.api.startCpp();
+        console.log('Waiting for C++ backend to start...');
         
         // Try to connect with retry logic
-        const maxRetries = 10;
+        const maxRetries = 15; // Increased to 15 attempts
         const retryDelay = 1000; // 1 second
         
         const tryConnection = async (attempt) => {
@@ -57,16 +57,16 @@ function App() {
         };
         
         // Start connection attempts after a short delay
-        setTimeout(() => tryConnection(1), 2000);
+        setTimeout(() => tryConnection(1), 3000); // Increased initial delay to 3 seconds
         
       } catch (error) {
-        console.error('Failed to start C++ backend:', error);
+        console.error('Connection initialization error:', error);
         setServerStatus('error');
-        setConnectionError(`Failed to start blockchain server: ${error.message}`);
+        setConnectionError(`Failed to initialize connection: ${error.message}`);
       }
     };
 
-    initializeServer();
+    initializeConnection();
 
     // Cleanup function
     return () => {
@@ -93,7 +93,7 @@ function App() {
           <p className="mt-4 text-gray-600">Starting blockchain server...</p>
           {connectionAttempt > 0 && (
             <p className="mt-2 text-sm text-gray-500">
-              Connection attempt {connectionAttempt}/10
+              Connection attempt {connectionAttempt}/15
             </p>
           )}
         </div>

@@ -1,8 +1,9 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'path'
+import { join, resolve, dirname } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { spawn } from 'child_process'
+import { existsSync } from 'fs'
 
 // Storing the C++ process globally
 let cppProcess = null
@@ -10,8 +11,21 @@ let cppProcess = null
 function startCppProcess() {
   const executablePath = getExecutablePath()
   console.log('Starting C++ backend at:', executablePath)
+  
+  if (!existsSync(executablePath)) {
+    console.error('C++ executable not found at:', executablePath)
+    const mainWindow = BrowserWindow.getAllWindows()[0]
+    if (mainWindow) {
+      mainWindow.webContents.send('cpp-error', `C++ executable not found at: ${executablePath}`)
+    }
+    return
+  }
 
-  cppProcess = spawn(executablePath, ['--port', '3001'])
+  console.log('Spawning process:', executablePath, 'with args:', ['--port', '3001'])
+  cppProcess = spawn(executablePath, ['--port', '3001'], {
+    stdio: ['pipe', 'pipe', 'pipe'],
+    detached: false
+  })
 
   // Handle data from C++ process
   cppProcess.stdout.on('data', (data) => {
@@ -35,6 +49,9 @@ function startCppProcess() {
 
   cppProcess.on('close', (code) => {
     console.log(`C++ process exited with code ${code}`)
+    if (code !== 0 && code !== null) {
+      console.error('C++ process exited with non-zero code. Try running the backend manually:', executablePath, '--port 3001')
+    }
     cppProcess = null
     const mainWindow = BrowserWindow.getAllWindows()[0]
     if (mainWindow) {
@@ -44,6 +61,7 @@ function startCppProcess() {
 
   cppProcess.on('error', (error) => {
     console.error('Failed to start C++ process:', error)
+    console.error('Try running the backend manually:', executablePath, '--port 3001')
     const mainWindow = BrowserWindow.getAllWindows()[0]
     if (mainWindow) {
       mainWindow.webContents.send('cpp-error', error.message)
@@ -55,7 +73,12 @@ function startCppProcess() {
 function getExecutablePath() {
   // For development, use the built executable
   if (is.dev) {
-    return join(__dirname, '../../../SimpleBlockchain/build/simpleblockchain')
+    // Get the project root directory by going up from the Electron app directory
+    const electronDir = dirname(dirname(__dirname)) // Go up from out/main/
+    const projectRoot = dirname(electronDir) // Go up from desktop-electron/
+    const execPath = join(projectRoot, 'SimpleBlockchain', 'build', 'simpleblockchain')
+    console.log('Resolved executable path:', execPath)
+    return execPath
   }
   
   // For production, look in resources
@@ -168,6 +191,12 @@ app.whenReady().then(() => {
 
   setupIpcHandlers()
   createWindow()
+  
+  // Start the C++ backend automatically after a short delay
+  setTimeout(() => {
+    console.log('Auto-starting C++ backend...')
+    startCppProcess()
+  }, 1000)
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
