@@ -172,8 +172,8 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       // IMPORTANT: Enable these for network requests to work
-      webSecurity: false, // Disable web security for development
-      allowRunningInsecureContent: true,
+      webSecurity: is.dev ? false : true, // Disable web security only in development
+      allowRunningInsecureContent: is.dev,
       experimentalFeatures: true
     }
   })
