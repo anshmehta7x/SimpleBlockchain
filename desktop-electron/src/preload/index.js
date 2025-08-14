@@ -22,10 +22,18 @@ const api = {
   // HTTP API methods for blockchain operations
   getBlockchain: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/blockchain`)
-      return await response.json()
+      console.log(`Fetching blockchain from ${API_BASE_URL}/blockchain`);
+      const response = await fetch(`${API_BASE_URL}/blockchain`);
+      console.log('Response status:', response.status);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const data = await response.json();
+      console.log('Blockchain data received:', data);
+      return data;
     } catch (error) {
-      return { success: false, message: error.message }
+      console.error('getBlockchain error:', error);
+      return { success: false, message: error.message };
     }
   },
 

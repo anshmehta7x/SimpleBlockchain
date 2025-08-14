@@ -9,24 +9,27 @@ let cppProcess = null
 
 function startCppProcess() {
   const executablePath = getExecutablePath()
+  console.log('Starting C++ backend at:', executablePath)
 
   cppProcess = spawn(executablePath, ['--port', '3001'])
 
   // Handle data from C++ process
   cppProcess.stdout.on('data', (data) => {
-    console.log('C++ stdout:', data.toString())
+    const output = data.toString()
+    console.log('C++ stdout:', output)
     // Send data to renderer process
     const mainWindow = BrowserWindow.getAllWindows()[0]
     if (mainWindow) {
-      mainWindow.webContents.send('cpp-output', data.toString())
+      mainWindow.webContents.send('cpp-output', output)
     }
   })
 
   cppProcess.stderr.on('data', (data) => {
-    console.error('C++ stderr:', data.toString())
+    const error = data.toString()
+    console.error('C++ stderr:', error)
     const mainWindow = BrowserWindow.getAllWindows()[0]
     if (mainWindow) {
-      mainWindow.webContents.send('cpp-error', data.toString())
+      mainWindow.webContents.send('cpp-error', error)
     }
   })
 

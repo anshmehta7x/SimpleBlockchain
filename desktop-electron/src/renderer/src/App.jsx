@@ -8,30 +8,61 @@ function App() {
   const [activeTab, setActiveTab] = useState('overview');
   const [serverStatus, setServerStatus] = useState('starting');
   const [connectionError, setConnectionError] = useState(null);
+  const [connectionAttempt, setConnectionAttempt] = useState(0);
 
   useEffect(() => {
     // Start the C++ process when the app loads
     const initializeServer = async () => {
       try {
+        console.log('Starting C++ backend...');
         await window.api.startCpp();
-        // Wait a bit for the server to start up
-        setTimeout(async () => {
+        
+        // Try to connect with retry logic
+        const maxRetries = 10;
+        const retryDelay = 1000; // 1 second
+        
+        const tryConnection = async (attempt) => {
           try {
+            console.log(`Connection attempt ${attempt}/${maxRetries}`);
+            setConnectionAttempt(attempt);
             const result = await window.api.getBlockchain();
             if (result.success) {
+              console.log('✅ Successfully connected to blockchain server');
               setServerStatus('connected');
+              return true;
             } else {
-              setServerStatus('error');
-              setConnectionError('Failed to connect to blockchain server');
+              console.log('❌ Connection failed:', result.message);
+              if (attempt >= maxRetries) {
+                setServerStatus('error');
+                setConnectionError(`Failed to connect after ${maxRetries} attempts: ${result.message || 'Unknown error'}`);
+                return false;
+              }
+              
+              // Retry after delay
+              setTimeout(() => tryConnection(attempt + 1), retryDelay);
+              return false;
             }
           } catch (error) {
-            setServerStatus('error');
-            setConnectionError('Failed to connect to blockchain server');
+            console.log(`❌ Connection error on attempt ${attempt}:`, error.message);
+            if (attempt >= maxRetries) {
+              setServerStatus('error');
+              setConnectionError(`Failed to connect after ${maxRetries} attempts: ${error.message}`);
+              return false;
+            }
+            
+            // Retry after delay
+            setTimeout(() => tryConnection(attempt + 1), retryDelay);
+            return false;
           }
-        }, 3000);
+        };
+        
+        // Start connection attempts after a short delay
+        setTimeout(() => tryConnection(1), 2000);
+        
       } catch (error) {
+        console.error('Failed to start C++ backend:', error);
         setServerStatus('error');
-        setConnectionError('Failed to start blockchain server');
+        setConnectionError(`Failed to start blockchain server: ${error.message}`);
       }
     };
 
@@ -39,7 +70,9 @@ function App() {
 
     // Cleanup function
     return () => {
-      window.api.stopCpp();
+      if (window.api && window.api.stopCpp) {
+        window.api.stopCpp();
+      }
     };
   }, []);
 
@@ -58,6 +91,11 @@ function App() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Starting blockchain server...</p>
+          {connectionAttempt > 0 && (
+            <p className="mt-2 text-sm text-gray-500">
+              Connection attempt {connectionAttempt}/10
+            </p>
+          )}
         </div>
       </div>
     );
@@ -66,10 +104,18 @@ function App() {
   if (serverStatus === 'error') {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-center bg-red-50 p-8 rounded-lg">
+        <div className="text-center bg-red-50 p-8 rounded-lg max-w-lg">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <h2 className="text-xl font-bold text-red-700 mb-2">Server Error</h2>
-          <p className="text-red-600">{connectionError}</p>
+          <p className="text-red-600 mb-4">{connectionError}</p>
+          <div className="text-sm text-gray-600 mb-4">
+            <p>Troubleshooting tips:</p>
+            <ul className="text-left list-disc list-inside mt-2">
+              <li>Make sure the C++ backend is built: <code>npm run build:cpp</code></li>
+              <li>Check if port 3001 is available</li>
+              <li>Try running the backend manually: <code>./SimpleBlockchain/build/simpleblockchain --port 3001</code></li>
+            </ul>
+          </div>
           <button 
             onClick={() => window.location.reload()} 
             className="mt-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
