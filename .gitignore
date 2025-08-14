@@ -367,3 +367,4 @@ MigrationBackup/
 FodyWeavers.xsd
 
 *.txt
+!CMakeLists.txt
