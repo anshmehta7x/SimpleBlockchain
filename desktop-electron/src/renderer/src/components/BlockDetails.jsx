@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { blockchainAPI } from '../utils/api';
+
 
 function BlockDetails() {
   const [blockchain, setBlockchain] = useState(null);
@@ -11,7 +13,7 @@ function BlockDetails() {
     setLoading(true);
     setError(null);
     try {
-      const result = await window.api.getBlockchain();
+      const result = await blockchainAPI.getBlockchain();
       if (result.success) {
         setBlockchain(result);
         if (result.blocks.length > 0 && !selectedBlock) {
@@ -30,7 +32,7 @@ function BlockDetails() {
   const fetchSpecificBlock = async (blockIndex) => {
     setBlockLoading(true);
     try {
-      const result = await window.api.getBlock(blockIndex);
+      const result = await blockchainAPI.getBlock(blockIndex);
       if (result.success) {
         setSelectedBlock(result.block);
       } else {
@@ -60,7 +62,7 @@ function BlockDetails() {
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <div className="text-red-800">Error: {error}</div>
-          <button 
+          <button
             onClick={fetchBlockchain}
             className="mt-2 bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
           >

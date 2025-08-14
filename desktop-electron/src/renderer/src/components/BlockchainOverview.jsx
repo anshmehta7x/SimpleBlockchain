@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { blockchainAPI } from '../utils/api';
 
 function BlockchainOverview() {
   const [blockchain, setBlockchain] = useState(null);
@@ -9,7 +10,7 @@ function BlockchainOverview() {
     setLoading(true);
     setError(null);
     try {
-      const result = await window.api.getBlockchain();
+      const result = await blockchainAPI.getBlockchain();
       if (result.success) {
         setBlockchain(result);
       } else {
@@ -41,7 +42,7 @@ function BlockchainOverview() {
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <div className="text-red-800">Error: {error}</div>
-          <button 
+          <button
             onClick={fetchBlockchain}
             className="mt-2 bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
           >
@@ -98,7 +99,7 @@ function BlockchainOverview() {
                   <div className="text-sm text-gray-500">{block.transactionCount} transactions</div>
                 </div>
               </div>
-              
+
               <div className="space-y-2 text-sm">
                 <div>
                   <span className="font-medium">Hash:</span>
@@ -123,7 +124,7 @@ function BlockchainOverview() {
                   <div className="space-y-1">
                     {block.transactions.slice(0, 3).map((tx, txIndex) => (
                       <div key={txIndex} className="text-xs bg-gray-50 p-2 rounded">
-                        <span className="font-medium">{tx.sender}</span> → 
+                        <span className="font-medium">{tx.sender}</span> →
                         <span className="font-medium"> {tx.receiver}</span>
                         <span className="text-green-600 ml-2">{tx.amount}</span>
                       </div>

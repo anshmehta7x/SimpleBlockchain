@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { blockchainAPI } from './utils/api';
 import BlockchainOverview from './components/BlockchainOverview';
 import BlockDetails from './components/BlockDetails';
 import TransactionManager from './components/TransactionManager';
@@ -16,16 +17,16 @@ function App() {
     const initializeConnection = async () => {
       try {
         console.log('Waiting for C++ backend to start...');
-        
+
         // Try to connect with retry logic
-        const maxRetries = 15; // Increased to 15 attempts
+        const maxRetries = 15;
         const retryDelay = 1000; // 1 second
-        
+
         const tryConnection = async (attempt) => {
           try {
             console.log(`Connection attempt ${attempt}/${maxRetries}`);
             setConnectionAttempt(attempt);
-            const result = await window.api.getBlockchain();
+            const result = await blockchainAPI.getBlockchain();
             if (result.success) {
               console.log('✅ Successfully connected to blockchain server');
               setServerStatus('connected');
@@ -37,7 +38,7 @@ function App() {
                 setConnectionError(`Failed to connect after ${maxRetries} attempts: ${result.message || 'Unknown error'}`);
                 return false;
               }
-              
+
               // Retry after delay
               setTimeout(() => tryConnection(attempt + 1), retryDelay);
               return false;
@@ -49,16 +50,16 @@ function App() {
               setConnectionError(`Failed to connect after ${maxRetries} attempts: ${error.message}`);
               return false;
             }
-            
+
             // Retry after delay
             setTimeout(() => tryConnection(attempt + 1), retryDelay);
             return false;
           }
         };
-        
+
         // Start connection attempts after a short delay
-        setTimeout(() => tryConnection(1), 3000); // Increased initial delay to 3 seconds
-        
+        setTimeout(() => tryConnection(1), 3000);
+
       } catch (error) {
         console.error('Connection initialization error:', error);
         setServerStatus('error');
@@ -116,8 +117,8 @@ function App() {
               <li>Try running the backend manually: <code>./SimpleBlockchain/build/simpleblockchain --port 3001</code></li>
             </ul>
           </div>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="mt-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
           >
             Retry

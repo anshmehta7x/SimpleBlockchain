@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { blockchainAPI } from '../utils/api';
+
 
 function TransactionManager() {
   const [transactions, setTransactions] = useState([]);
@@ -6,7 +8,7 @@ function TransactionManager() {
   const [error, setError] = useState(null);
   const [editingTx, setEditingTx] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     sender: '',
@@ -18,7 +20,7 @@ function TransactionManager() {
     setLoading(true);
     setError(null);
     try {
-      const result = await window.api.getTransactions();
+      const result = await blockchainAPI.getTransactions();
       if (result.success) {
         setTransactions(result.transactions);
       } else {
@@ -34,7 +36,7 @@ function TransactionManager() {
   const handleAddTransaction = async (e) => {
     e.preventDefault();
     try {
-      const result = await window.api.addTransaction(
+      const result = await blockchainAPI.addTransaction(
         formData.sender,
         formData.receiver,
         parseFloat(formData.amount)
@@ -54,7 +56,7 @@ function TransactionManager() {
   const handleEditTransaction = async (e) => {
     e.preventDefault();
     try {
-      const result = await window.api.editTransaction(
+      const result = await blockchainAPI.editTransaction(
         editingTx.hash,
         formData.sender,
         formData.receiver,
@@ -75,7 +77,7 @@ function TransactionManager() {
   const handleRemoveTransaction = async (hash) => {
     if (window.confirm('Are you sure you want to remove this transaction?')) {
       try {
-        const result = await window.api.removeTransaction(hash);
+        const result = await blockchainAPI.removeTransaction(hash);
         if (result.success) {
           fetchTransactions();
         } else {
@@ -142,7 +144,7 @@ function TransactionManager() {
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <div className="text-red-800">{error}</div>
-          <button 
+          <button
             onClick={() => setError(null)}
             className="mt-2 text-red-600 hover:text-red-800 text-sm"
           >
