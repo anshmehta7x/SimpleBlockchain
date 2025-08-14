@@ -9,7 +9,7 @@
     "format": "prettier --write .",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
     "start": "electron-vite preview",
-    "dev": "npm run build:cpp && electron-vite dev",
+    "dev": "npm run build:cpp && electron-vite dev --no-sandbox --disable-setuid-sandbox",
     "dev:debug": "npm run build:cpp && electron-vite dev --no-sandbox --disable-setuid-sandbox",
     "build": "npm run build:cpp && electron-vite build",
     "build:cpp": "cd ../SimpleBlockchain && mkdir -p build && cd build && cmake .. && make",

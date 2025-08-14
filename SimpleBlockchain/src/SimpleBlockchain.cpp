@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <mutex>
 #include <condition_variable>
+#include <signal.h>
+#include <csignal>
 
 // Include your blockchain headers
 #include "Transaction.h"
@@ -29,6 +31,15 @@ using json = nlohmann::json;
 std::unique_ptr<Chain> blockchain;
 std::mutex chainMutex;
 
+// Flag for graceful shutdown
+volatile std::sig_atomic_t shutdown_flag = 0;
+
+// Signal handler for graceful shutdown
+void signal_handler(int signal) {
+    std::cout << "\nReceived signal " << signal << ". Shutting down gracefully..." << std::endl;
+    shutdown_flag = 1;
+}
+
 // Helper function to parse JSON request body
 json parseRequestBody(const httplib::Request &req)
 {
@@ -45,6 +56,13 @@ json parseRequestBody(const httplib::Request &req)
 int main(int argc, char *argv[])
 {
     std::cout << "Blockchain HTTP Server Starting...\n";
+    
+    // Set up signal handlers for graceful shutdown
+    std::signal(SIGTERM, signal_handler);
+    std::signal(SIGINT, signal_handler);
+    #ifdef SIGPIPE
+    std::signal(SIGPIPE, SIG_IGN); // Ignore broken pipe signals
+    #endif
 
     // Default values for difficulty and block size
     unsigned int difficulty = 3;
@@ -450,7 +468,18 @@ int main(int argc, char *argv[])
 
     // Start server
     std::cout << "HTTP server starting on port " << port << "...\n";
-    server.listen("127.0.0.1", port);
+    std::cout.flush(); // Ensure output is written immediately
+    
+    if (!server.listen("127.0.0.1", port)) {
+        std::cerr << "ERROR: Failed to start HTTP server on port " << port << std::endl;
+        std::cerr << "This could be due to:" << std::endl;
+        std::cerr << "1. Port already in use" << std::endl;
+        std::cerr << "2. Permission denied" << std::endl;
+        std::cerr << "3. Address binding issues" << std::endl;
+        return 1;
+    }
+    
+    std::cout << "HTTP server started successfully on port " << port << std::endl;
 
     return 0;
 }

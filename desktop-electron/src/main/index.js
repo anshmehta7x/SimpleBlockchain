@@ -21,10 +21,15 @@ function startCppProcess() {
     return
   }
 
+  const workingDir = dirname(executablePath)
+  console.log('Working directory:', workingDir)
   console.log('Spawning process:', executablePath, 'with args:', ['--port', '3001'])
+  
   cppProcess = spawn(executablePath, ['--port', '3001'], {
-    stdio: ['pipe', 'pipe', 'pipe'],
-    detached: false
+    stdio: ['ignore', 'pipe', 'pipe'], // Don't pipe stdin to avoid process termination
+    detached: false,
+    cwd: workingDir, // Set working directory to the build folder
+    windowsHide: true
   })
 
   // Handle data from C++ process
@@ -47,15 +52,18 @@ function startCppProcess() {
     }
   })
 
-  cppProcess.on('close', (code) => {
-    console.log(`C++ process exited with code ${code}`)
+  cppProcess.on('close', (code, signal) => {
+    console.log(`C++ process exited with code ${code} and signal ${signal}`)
     if (code !== 0 && code !== null) {
       console.error('C++ process exited with non-zero code. Try running the backend manually:', executablePath, '--port 3001')
+    }
+    if (signal) {
+      console.error('C++ process was killed by signal:', signal)
     }
     cppProcess = null
     const mainWindow = BrowserWindow.getAllWindows()[0]
     if (mainWindow) {
-      mainWindow.webContents.send('cpp-closed', code)
+      mainWindow.webContents.send('cpp-closed', { code, signal })
     }
   })
 
@@ -85,6 +93,37 @@ function getExecutablePath() {
   const baseDir = join(process.resourcesPath, 'executables')
   const exeName = 'simpleblockchain'
   return join(baseDir, exeName)
+}
+
+// Test backend connection
+function testBackendConnection() {
+  const http = require('http')
+  
+  const req = http.get('http://127.0.0.1:3001/api/blockchain', (res) => {
+    console.log('Backend connection test successful! Status:', res.statusCode)
+    let data = ''
+    res.on('data', chunk => data += chunk)
+    res.on('end', () => {
+      console.log('Backend response length:', data.length)
+      const mainWindow = BrowserWindow.getAllWindows()[0]
+      if (mainWindow) {
+        mainWindow.webContents.send('backend-ready', true)
+      }
+    })
+  })
+  
+  req.on('error', (err) => {
+    console.error('Backend connection test failed:', err.message)
+    const mainWindow = BrowserWindow.getAllWindows()[0]
+    if (mainWindow) {
+      mainWindow.webContents.send('backend-error', `Connection failed: ${err.message}`)
+    }
+  })
+  
+  req.setTimeout(5000, () => {
+    console.error('Backend connection test timed out')
+    req.destroy()
+  })
 }
 
 // IPC handlers for C++ process interaction
@@ -196,6 +235,12 @@ app.whenReady().then(() => {
   setTimeout(() => {
     console.log('Auto-starting C++ backend...')
     startCppProcess()
+    
+    // Test connection after giving the backend time to start
+    setTimeout(() => {
+      console.log('Testing backend connection...')
+      testBackendConnection()
+    }, 3000)
   }, 1000)
 
   app.on('activate', function () {
