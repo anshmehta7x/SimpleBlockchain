@@ -311,6 +311,50 @@ int main(int argc, char *argv[])
         
         res.set_content(response.dump(), "application/json"); });
 
+    // Get specific block by index
+    server.Get("/api/block/:index", [](const httplib::Request &req, httplib::Response &res)
+               {
+        json response;
+        
+        try {
+            size_t blockIndex = std::stoull(req.path_params.at("index"));
+            
+            std::lock_guard<std::mutex> lock(chainMutex);
+            if (blockIndex >= blockchain->getChainSize()) {
+                response["success"] = false;
+                response["message"] = "Invalid block index";
+            } else {
+                const Block& block = blockchain->getBlockAt(blockIndex);
+                
+                response["success"] = true;
+                response["block"]["id"] = blockIndex;
+                response["block"]["hash"] = block.getHash();
+                response["block"]["prevHash"] = block.getPrevHash();
+                response["block"]["merkleRoot"] = block.getMerkleRoot();
+                response["block"]["nonce"] = block.getNonce();
+                response["block"]["timestamp"] = block.getTime();
+                
+                json txArray = json::array();
+                for (const auto& tx : block.getTransactions()) {
+                    json txObj;
+                    txObj["hash"] = tx.getTxHash();
+                    txObj["sender"] = tx.getSender();
+                    txObj["receiver"] = tx.getReceiver();
+                    txObj["amount"] = tx.getAmount();
+                    txObj["timestamp"] = tx.getTime();
+                    txArray.push_back(txObj);
+                }
+                
+                response["block"]["transactions"] = txArray;
+                response["block"]["transactionCount"] = txArray.size();
+            }
+        } catch (const std::exception& e) {
+            response["success"] = false;
+            response["message"] = std::string("Error: ") + e.what();
+        }
+        
+        res.set_content(response.dump(), "application/json"); });
+
     // Save blockchain
     server.Post("/api/save", [](const httplib::Request &req, httplib::Response &res)
                 {
