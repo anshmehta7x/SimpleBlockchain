@@ -10,6 +10,7 @@
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
     "start": "electron-vite preview",
     "dev": "npm run build:cpp && electron-vite dev",
+    "dev:debug": "npm run build:cpp && electron-vite dev --no-sandbox --disable-setuid-sandbox",
     "build": "npm run build:cpp && electron-vite build",
     "build:cpp": "cd ../SimpleBlockchain && mkdir -p build && cd build && cmake .. && make",
     "build:cpp:clean": "cd ../SimpleBlockchain && rm -rf build && mkdir -p build && cd build && cmake .. && make",
@@ -20,7 +21,9 @@
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
-    "build:linux": "npm run build && electron-builder --linux"
+    "build:linux": "npm run build && electron-builder --linux",
+    "serve:web": "npx electron-vite build && npx serve out/renderer -l 5173",
+    "test:backend": "cd ../SimpleBlockchain/build && ./simpleblockchain --port 3001"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",

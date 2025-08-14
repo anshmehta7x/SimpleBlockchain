@@ -118,16 +118,88 @@ This project includes an automated build system that handles:
 
 ## Installation & Usage
 
-### Method 1: Automatic Setup (Recommended)
+### Method 1: Quick Start (Recommended)
 
-1. **Run the setup script:**
-   ```bash
-   ./setup.sh
-   ```
-   This will automatically install dependencies, download required libraries, and build the C++ backend.
+```bash
+# Clone and navigate to the project
+cd desktop-electron
 
-2. **Start the application:**
-   ```bash
+# Install dependencies and run
+npm install
+npm run dev
+```
+
+**If you encounter Electron sandboxing issues in CI/development environments:**
+```bash
+npm run dev:debug
+```
+
+### Method 2: Using Setup Script
+
+```bash
+./setup.sh
+cd desktop-electron
+npm run dev
+```
+
+### Method 3: Manual Build
+
+```bash
+# Build C++ backend
+cd SimpleBlockchain
+mkdir -p build && cd build
+cmake .. && make
+
+# Run Electron app
+cd ../../desktop-electron
+npm install
+npm run start
+```
+
+### Method 4: Browser Version (Alternative)
+
+If Electron has issues, you can run the frontend in a browser:
+
+```bash
+# Terminal 1: Start backend
+cd SimpleBlockchain/build
+./simpleblockchain --port 3001
+
+# Terminal 2: Build and serve frontend
+cd desktop-electron
+npm run serve:web
+```
+
+Then open http://localhost:5173 in your browser.
+
+## Troubleshooting
+
+### Common Issues
+
+1. **"Failed to connect to blockchain server"**
+   - The backend is working but frontend can't connect
+   - Try the debug version: `npm run dev:debug`
+   - See [DEBUGGING_GUIDE.md](DEBUGGING_GUIDE.md) for detailed troubleshooting
+
+2. **Electron sandboxing errors**
+   - Use `npm run dev:debug` instead of `npm run dev`
+   - Or run the browser version with `npm run serve:web`
+
+3. **Build failures**
+   - Make sure you have CMake and OpenSSL installed
+   - Try clean build: `npm run build:cpp:clean`
+
+4. **Port conflicts**
+   - Check if port 3001 is available: `lsof -i :3001`
+   - Kill conflicting processes or change the port
+
+### Debug Scripts
+
+- `npm run test:backend` - Test the backend directly
+- `npm run serve:web` - Run frontend in browser
+- `npm run dev:debug` - Run Electron with sandboxing disabled
+
+For detailed debugging steps, see [DEBUGGING_GUIDE.md](DEBUGGING_GUIDE.md).
    cd desktop-electron
    npm run dev
    ```
